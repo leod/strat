@@ -188,7 +188,7 @@ void RenderBuildingSystem::configure(entityx::EventManager &events) {
 void RenderBuildingSystem::render(entityx::EntityManager &entities) {
     GameObject::Handle gameObject;
     Building::Handle building;
-    for (entityx::Entity entity :
+    for (entityx::Entity entity:
          entities.entities_with_components(gameObject, building)) {
         glPushMatrix();
         glTranslatef(building->getX(), building->getY(),

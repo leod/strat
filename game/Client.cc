@@ -13,9 +13,9 @@ Client::Client(entityx::EntityX &entityx, const std::string &username)
     , client(NULL)
     , peer(NULL)
     , sim(entityx)
+    , playerId(0) 
     , tickRunning(false)
-    , tickStartTime(0)
-    , playerId(0) {
+    , tickStartTime(0) {
 }
 
 Client::~Client() {
@@ -125,6 +125,9 @@ void Client::handleMessage(const Message &message) {
         sim.runTick(message.server_tick.orders);
         tickRunning = true;
         tickStartTime = glfwGetTime();
+        return;
+
+    default:
         return;
     }
 }

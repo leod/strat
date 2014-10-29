@@ -9,13 +9,13 @@ Map::Map(size_t sizeX, size_t sizeY)
     , points(sizeX * sizeY) {
 } 
 
-Map *Map::generate(size_t sizeX, size_t sizeY, int heightLimit) {
+Map *Map::generate(size_t sizeX, size_t sizeY, size_t heightLimit) {
     Map *map = new Map(sizeX, sizeY);
 
     PerlinNoise noise(sizeX, sizeY);
     noise.generate(8, 0.4);
 
-    int minHeight = heightLimit;
+    size_t minHeight = heightLimit;
 
     // Create heightmap from perlin noise,
     // converting from floats to integer values

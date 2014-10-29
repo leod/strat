@@ -54,7 +54,7 @@ bool Sim::canPlaceBuilding(BuildingType type, size_t px, size_t py) const {
     const BuildingTypeInfo &typeInfo(buildingTypeInfo[type]);
     bool valid = true;
 
-    int height = map->point(px, py).height;
+    size_t height = map->point(px, py).height;
 
     for (size_t x = px; x < px + typeInfo.sizeX; x++) {
         if (x >= map->getSizeX()) {
@@ -89,7 +89,7 @@ bool Sim::isOrderValid(const Order &order) const {
 
 void Sim::runOrder(const Order &order) {
     switch (order.type) {
-    case Order::BUILD:
+    case Order::BUILD: {
         std::cout << "Got build order at x=" << order.build.x
                   << ", y=" << order.build.y 
                   << ", by " << order.player << std::endl;
@@ -109,6 +109,7 @@ void Sim::runOrder(const Order &order) {
         }
 
         return;
+    }
 
     default:
         return;
