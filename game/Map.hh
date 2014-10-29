@@ -37,7 +37,8 @@ struct Map {
         return points[y * sizeX + x];
     }
 
-    static Map *generate(size_t sizeX, size_t sizeY, size_t heightLimit);
+    static Map generate(size_t sizeX, size_t sizeY,
+                        size_t heightLimit, size_t seed);
 
 private:
     size_t sizeX;

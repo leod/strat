@@ -7,12 +7,11 @@
 #include <iostream>
 #include <cassert>
 
-Client::Client(entityx::EntityX &entityx, const std::string &username)
-    : entityx(entityx)
-    , username(username)
+Client::Client(const std::string &username)
+    : username(username)
     , client(NULL)
     , peer(NULL)
-    , sim(entityx)
+    , sim(NULL)
     , playerId(0) 
     , tickRunning(false)
     , tickStartTime(0) {
@@ -21,6 +20,9 @@ Client::Client(entityx::EntityX &entityx, const std::string &username)
 Client::~Client() {
     if (client)
         enet_host_destroy(client);
+
+    if (sim)
+        delete sim;
 }
 
 void Client::connect(const std::string &host, int port) {
@@ -56,7 +58,7 @@ void Client::connect(const std::string &host, int port) {
 
 void Client::update() {
     if (tickRunning
-        && glfwGetTime() - tickStartTime > settings.tickLengthMs) {
+        && glfwGetTime() - tickStartTime > settings.tickLengthMs / 1000.0f) {
         tickRunning = false;
 
         Message message(Message::CLIENT_TICK_DONE);
@@ -91,7 +93,9 @@ void Client::update() {
 }
 
 void Client::order(const Order &order) {
-    if (sim.isOrderValid(order)) {
+    assert(sim);
+
+    if (sim->getState().isOrderValid(order)) {
         Message message(Message::CLIENT_ORDER);
         message.client_order.order = order;
         sendMessage(message);
@@ -116,15 +120,17 @@ void Client::handleMessage(const Message &message) {
                   << message.server_start.settings.randomSeed << std::endl;
 
         settings = message.server_start.settings;
-        sim.start(message.server_start.settings);
+        sim = new Sim(settings);
         return;
 
     case Message::SERVER_TICK:
         //std::cout << "Starting tick" << std::endl;
 
-        sim.runTick(message.server_tick.orders);
-        tickRunning = true;
-        tickStartTime = glfwGetTime();
+        if (sim) {
+            sim->runTick(message.server_tick.orders);
+            tickRunning = true;
+            tickStartTime = glfwGetTime();
+        }
         return;
 
     default:

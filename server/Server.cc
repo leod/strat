@@ -46,7 +46,7 @@ void broadcast(const Message &message) {
 }
 
 void startTick() {
-    //std::cout << "Starting tick" << std::endl;
+    std::cout << "Starting tick" << std::endl;
 
     assert(gameStarted);
     for (auto client : clients)
@@ -102,7 +102,10 @@ void handleMessage(ClientInfo *client, const Message &message) {
     case Message::CLIENT_TICK_DONE:
         assert(!client->tickDone);
         client->tickDone = true;
-        break;
+        return;
+
+    default:
+        return;
     }
 }
 

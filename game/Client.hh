@@ -10,33 +10,37 @@
 #include <string>
 
 struct Client {
-    Client(entityx::EntityX &entityx, const std::string &username);
+    Client(const std::string &username);
     ~Client();
 
     void connect(const std::string &host, int port);
 
     Sim &getSim() {
-        return sim;
+        assert(sim != NULL);
+        return *sim;
     }
 
     const Sim &getSim() const {
-        return sim;
+        assert(sim != NULL);
+        return *sim;
     }    
 
     void update();
 
     void order(const Order &order);
 
-private:
-    entityx::EntityX &entityx;
+    bool isStarted() const {
+        return sim != NULL;
+    }
 
+private:
     std::string username;
 
     ENetHost *client;
     ENetPeer *peer;
 
     GameSettings settings;
-    Sim sim;
+    Sim *sim;
 
     PlayerId playerId;
 

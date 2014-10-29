@@ -59,24 +59,21 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    entityx::EntityX entityx;
-
-    Client client(entityx, "leo");
+    Client client("leo");
     client.connect("192.168.11.41", 1234);
 
-    Sim &sim(client.getSim());
-
-    while (!sim.isStarted()) {
+    while (!client.isStarted()) {
         std::cout << "Waiting for the game to start" << std::endl;
         client.update();
     }
 
-    Map &map(sim.getMap());
+    Sim &sim(client.getSim());
+    SimState &simState(sim.getState());
+    Map &map(simState.getMap());
     TerrainMesh terrainMesh(map);
 
-    entityx.systems.add<RenderBuildingSystem>(map);
-
-    entityx.systems.configure();
+    simState.systems.add<RenderBuildingSystem>(map);
+    simState.systems.configure();
 
     size_t frames = 0, fps = 0;
     double lastFrameTime = glfwGetTime();
@@ -92,7 +89,7 @@ int main(int argc, char *argv[]) {
         setupGraphics(config, view);
         terrainMesh.draw();
         
-        entityx.systems.system<RenderBuildingSystem>()->render(entityx.entities);
+        simState.systems.system<RenderBuildingSystem>()->render(simState.entities);
 
         drawCursor(view);
 

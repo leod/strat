@@ -196,7 +196,7 @@ void RenderBuildingSystem::render(entityx::EntityManager &entities) {
         glScalef(building->getTypeInfo().sizeX - 1.0f,
                  building->getTypeInfo().sizeY - 1.0f,
                  building->getTypeInfo().sizeZ);
-        assert(gameObject->getOwner() > 0);
+        assert(gameObject->getOwner() > 0 && gameObject->getOwner()-1 < 4);
         glm::vec3 color(playerColors[gameObject->getOwner()-1]);
         glBegin(GL_QUADS);
         glColor4f(color.x, color.y, color.z, 1.0f);

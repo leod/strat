@@ -14,6 +14,11 @@ enum BuildingType {
     BUILDING_MAX
 };
 
+enum ResourceType {
+    RESOURCE_IRON,
+    RESOURCE_MAX
+};
+
 struct BuildingTypeInfo {
     size_t sizeX;
     size_t sizeY; 
