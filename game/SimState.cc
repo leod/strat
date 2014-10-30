@@ -21,7 +21,7 @@ SimState::SimState(const GameSettings &settings)
         do {
             x = rand() % settings.mapW;
             y = rand() % settings.mapH;
-        } while (!canPlaceBuilding(BUILDING_BASE, x, y));
+        } while (!canPlaceBuilding(BUILDING_BASE, glm::uvec2(x, y)));
 
         Order order(Order::BUILD);
         order.player = player.id;
@@ -35,25 +35,25 @@ SimState::SimState(const GameSettings &settings)
     }
 }
 
-bool SimState::canPlaceBuilding(BuildingType type, size_t px, size_t py) const {
+bool SimState::canPlaceBuilding(BuildingType type, const glm::uvec2 &p) const {
     assert(type >= 0 && type < BUILDING_MAX);
 
-    if (px >= map.getSizeX()
-        || py >= map.getSizeY()) {
+    if (p.x >= map.getSizeX()
+        || p.y >= map.getSizeY()) {
         return false;
     }
 
     const BuildingTypeInfo &typeInfo(buildingTypeInfo[type]);
     bool valid = true;
 
-    size_t height = map.point(px, py).height;
+    size_t height = map.point(p.x, p.y).height;
 
-    for (size_t x = px > 0 ? px - 1 : 0; x < px + typeInfo.sizeX + 1; x++) {
+    for (size_t x = p.x > 0 ? p.x - 1 : 0; x < p.x + typeInfo.size.x + 1; x++) {
         if (x >= map.getSizeX()) {
             valid = false;
             break;
         }
-        for (size_t y = py > 0 ? py - 1 : 0; y < py + typeInfo.sizeY + 1; y++) {
+        for (size_t y = p.y > 0 ? p.y - 1 : 0; y < p.y + typeInfo.size.y + 1; y++) {
             if (y >= map.getSizeY()) {
                 valid = false;
                 break;
@@ -71,13 +71,13 @@ bool SimState::canPlaceBuilding(BuildingType type, size_t px, size_t py) const {
 
 entityx::Entity SimState::findClosestBuilding(BuildingType type,
                                               PlayerId owner,
-                                              size_t px, size_t py,
+                                              const glm::uvec2 &p,
                                               size_t maxRange) const {
     entityx::Entity entity;
     size_t minDistance = 0;
 
-    size_t startX = px >= maxRange ? px - maxRange : 0;
-    size_t startY = py >= maxRange ? py - maxRange : 0;
+    size_t startX = p.x >= maxRange ? p.x - maxRange : 0;
+    size_t startY = p.y >= maxRange ? p.y - maxRange : 0;
 
     for (size_t x = startX; x < startX + maxRange && x < map.getSizeX(); x++) {
         for (size_t y = startY; y < startY + maxRange && y < map.getSizeY(); y++) {
@@ -87,8 +87,8 @@ entityx::Entity SimState::findClosestBuilding(BuildingType type,
                 && point.entity.has_component<Building>()
                 && point.entity.component<Building>()->getType() == type
                 && point.entity.component<GameObject>()->getOwner() == owner) {
-                size_t distance = (std::max(px, x) - std::min(px, x)) * (std::max(px, x) - std::min(px, x)) +
-                                  (std::max(py, y) - std::min(py, y)) * (std::max(py, y) - std::min(py, y));
+                size_t distance = sqDistance(p, glm::uvec2(x, y));
+
                 if (distance <= maxRange * maxRange && (!entity.valid() || distance < minDistance)) {
                     entity = point.entity;
                     minDistance = distance;
@@ -103,7 +103,8 @@ entityx::Entity SimState::findClosestBuilding(BuildingType type,
 bool SimState::isOrderValid(const Order &order) const {
     switch (order.type) {
     case Order::BUILD: {
-        return canPlaceBuilding(order.build.type, order.build.x, order.build.y);
+        return canPlaceBuilding(order.build.type,
+                                glm::uvec2(order.build.x, order.build.y));
     }
     default:
         return false;
@@ -122,7 +123,8 @@ void SimState::runOrder(const Order &order) {
         entityx::Entity entity = entities.create();
         entity.assign<GameObject>(order.player, ++entityCounter);
         entity.assign<Building>(order.build.type,
-            order.build.x, order.build.y);
+            glm::uvec3(order.build.x, order.build.y,
+                       map.point(order.build.x, order.build.y).height));
 
         if (order.build.type == BUILDING_MINER)
             entity.assign<MinerBuilding>(RESOURCE_IRON);
@@ -130,8 +132,8 @@ void SimState::runOrder(const Order &order) {
         events.emit<BuildingCreated>(entity);
 
         const BuildingTypeInfo &type(buildingTypeInfo[order.build.type]);
-        for (size_t x = order.build.x; x < order.build.x + type.sizeX; x++) {
-            for (size_t y = order.build.y; y < order.build.y + type.sizeY; y++) {
+        for (size_t x = order.build.x; x < order.build.x + type.size.x; x++) {
+            for (size_t y = order.build.y; y < order.build.y + type.size.y; y++) {
                 map.point(x, y).entity = entity;
             }
         }
@@ -157,36 +159,30 @@ const PlayerState &SimState::getPlayer(PlayerId id) const {
 }
 
 Fixed SimState::getTickLengthS() const {
-    return settings.tickLengthMs / 1000.0f;
+    return Fixed(settings.tickLengthMs) / Fixed(1000);
 }
 
-void SimState::addResourceTransfer(Entity from, Entity to,
+void SimState::addResourceTransfer(Entity fromEntity, Entity toEntity,
                                    ResourceType resource,
                                    size_t amount) {
-    Building::Handle fromBuilding(from.component<Building>()),
-                     toBuilding(to.component<Building>());
+    Building::Handle fromBuilding(fromEntity.component<Building>()),
+                     toBuilding(toEntity.component<Building>());
+    assert(fromBuilding && toBuilding);
 
-    Fixed fromX = Fixed((int)fromBuilding->getX()) + Fixed((int)fromBuilding->getTypeInfo().sizeX) / Fixed(2);
-    Fixed fromY = Fixed((int)fromBuilding->getY()) + Fixed((int)fromBuilding->getTypeInfo().sizeY) / Fixed(2);
-    Fixed fromZ = Fixed((int)map.point(fromBuilding->getX(), fromBuilding->getY()).height);
-    Fixed toX = Fixed((int)toBuilding->getX()) + Fixed((int)toBuilding->getTypeInfo().sizeX) / Fixed(2);
-    Fixed toY = Fixed((int)toBuilding->getY()) + Fixed((int)toBuilding->getTypeInfo().sizeY) / Fixed(2);
-    Fixed toZ = Fixed((int)map.point(toBuilding->getX(), toBuilding->getY()).height);
+    fvec3 fromPosition(fromBuilding->getPosition());
+    fvec3 toPosition(toBuilding->getPosition());
 
-    /*std::cout << (float)fromX << std::endl;
-    std::cout << (float)fromY << std::endl;
-    std::cout << (float)toX << std::endl;
-    std::cout << (float)toY << std::endl << std::endl;
-    std::cout << (int)fromX << std::endl;
-    std::cout << (int)fromY << std::endl;
-    std::cout << (int)toX << std::endl;
-    std::cout << (int)toY << std::endl;*/
+    fromPosition += fvec3(Fixed(fromBuilding->getTypeInfo().size.x) / Fixed(2),
+                          Fixed(fromBuilding->getTypeInfo().size.y) / Fixed(2),
+                          Fixed(fromBuilding->getTypeInfo().size.z));
+    toPosition += fvec3(Fixed(toBuilding->getTypeInfo().size.x) / Fixed(2),
+                        Fixed(toBuilding->getTypeInfo().size.y) / Fixed(2),
+                        Fixed(toBuilding->getTypeInfo().size.z));
 
     entityx::Entity entity = entities.create();
     entity.assign<GameObject>(PLAYER_NEUTRAL, ++entityCounter);
-    entity.assign<ResourceTransfer>(from, to,
-                                    fromX, fromY, fromZ,
-                                    toX, toY, toZ,
+    entity.assign<ResourceTransfer>(fromEntity, toEntity,
+                                    fromPosition, toPosition,
                                     resource,
                                     amount);
 }

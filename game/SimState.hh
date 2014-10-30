@@ -33,9 +33,9 @@ private:
 struct SimState : entityx::EntityX {
     SimState(const GameSettings &);
 
-    bool canPlaceBuilding(BuildingType, size_t px, size_t py) const;
+    bool canPlaceBuilding(BuildingType, const glm::uvec2 &p) const;
     entityx::Entity findClosestBuilding(BuildingType, PlayerId,
-                                        size_t px, size_t py,
+                                        const glm::uvec2 &p,
                                         size_t maxRange) const;
 
     bool isOrderValid(const Order &) const;
@@ -50,7 +50,7 @@ struct SimState : entityx::EntityX {
     // Tick length in seconds
     Fixed getTickLengthS() const;
 
-    void addResourceTransfer(Entity from, Entity to,
+    void addResourceTransfer(Entity fromPosition, Entity toPosition,
                              ResourceType resource,
                              size_t amount); 
 

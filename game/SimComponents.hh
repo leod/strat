@@ -25,8 +25,8 @@ private:
 };
 
 struct Building : entityx::Component<Building> {
-    Building(BuildingType type, size_t x, size_t y)
-        : type(type), x(x), y(y) {
+    Building(BuildingType type, const glm::uvec3 &position)
+        : type(type), position(position) {
         assert(type >= 0 && type < BUILDING_MAX);
     }
 
@@ -35,13 +35,12 @@ struct Building : entityx::Component<Building> {
         return buildingTypeInfo[type];
     }
 
-    size_t getX() const { return x; }
-    size_t getY() const { return y; }
+    const glm::uvec3 &getPosition() const { return position; }
 
 private:
     const BuildingType type;
 
-    size_t x, y;
+    glm::uvec3 position;
 };
 
 struct MinerBuilding : entityx::Component<MinerBuilding> {
@@ -67,30 +66,23 @@ public:
     const Entity fromEntity;
     const Entity toEntity;
 
-    const Fixed fromX;
-    const Fixed fromY;
-    const Fixed fromZ;
-    const Fixed toX;
-    const Fixed toY;
-    const Fixed toZ;
+    const fvec3 fromPosition;
+    const fvec3 toPosition;
     const ResourceType resource;
     const size_t amount;
     const Fixed distance;
 
     ResourceTransfer(Entity fromEntity, Entity toEntity,
-                     Fixed fromX, Fixed fromY, Fixed fromZ,
-                     Fixed toX, Fixed toY, Fixed toZ,
+                     fvec3 fromPosition, fvec3 toPosition,
                      ResourceType resource,
                      size_t amount)
         : lastProgress(0), progress(0),
           fromEntity(fromEntity),
           toEntity(toEntity),
-          fromX(fromX), fromY(fromY), fromZ(fromZ),
-          toX(toX), toY(toY), toZ(toZ),
+          fromPosition(fromPosition), toPosition(toPosition),
           resource(resource),
           amount(amount),
-          distance(((std::max(fromX, toX) - std::min(fromX, toX)) +
-                   ((std::max(fromY, toY) - std::min(fromY, toY))))) {
+          distance(manhattanDistance(fromPosition, toPosition)) {
         assert(distance > Fixed(0));
     }
 

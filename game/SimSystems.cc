@@ -12,12 +12,12 @@ void MinerBuildingSystem::tick(SimState &state) {
             //std::cout << "WHEEEEEEEE... " << gameObject->getId() << std::endl;
             
             entityx::Entity target = state.findClosestBuilding(BUILDING_STORE, gameObject->getOwner(),
-                                                               building->getX(), building->getY(),
+                                                               glm::uvec2(building->getPosition()),
                                                                100);
             if (target) {
                 //std::cout << "Sending off to " << target.component<GameObject>()->getId() << std::endl;
 
-                state.addResourceTransfer(entity, target, RESOURCE_IRON, (int)miner->amountStored); 
+                state.addResourceTransfer(entity, target, RESOURCE_IRON, miner->amountStored.toInt()); 
 
                 miner->amountStored = 0;
             }
@@ -28,7 +28,7 @@ void MinerBuildingSystem::tick(SimState &state) {
 }
 
 void ResourceTransferSystem::tick(SimState &state) {
-    Fixed distancePerSecond = 5;
+    Fixed distancePerSecond(5);
 
     ResourceTransfer::Handle resourceTransfer;
     for (auto entity : state.entities.entities_with_components(resourceTransfer)) {

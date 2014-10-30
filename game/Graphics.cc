@@ -11,7 +11,7 @@
 
 #define checkError() printOglError(__FILE__, __LINE__)
 
-#define SCALE_Z 1.5f
+#define SCALE_Z 1.0f
 
 static glm::vec3 playerColors[4] = {
     glm::vec3(0.0, 1.0, 1.0),
@@ -194,11 +194,12 @@ void RenderBuildingSystem::render(entityx::EntityManager &entities) {
     for (entityx::Entity entity:
          entities.entities_with_components(gameObject, building)) {
         glPushMatrix();
-        glTranslatef(building->getX(), building->getY(),
-                     map.point(building->getX(), building->getY()).height * SCALE_Z);
-        glScalef(building->getTypeInfo().sizeX,
-                 building->getTypeInfo().sizeY,
-                 building->getTypeInfo().sizeZ);
+        glTranslatef(building->getPosition().x, building->getPosition().y,
+                     map.point(building->getPosition().x,
+                               building->getPosition().y).height * SCALE_Z);
+        glScalef(building->getTypeInfo().size.x,
+                 building->getTypeInfo().size.y,
+                 building->getTypeInfo().size.z);
         assert(gameObject->getOwner() > 0 && gameObject->getOwner()-1 < 4);
         glm::vec3 color(playerColors[gameObject->getOwner()-1]);
         glBegin(GL_QUADS);
@@ -215,14 +216,16 @@ void RenderBuildingSystem::receive(const BuildingCreated &event) {
 void RenderResourceTransferSystem::render(entityx::EntityManager &entities) {
     ResourceTransfer::Handle r;
     for (auto entity : entities.entities_with_components(r)) {
-        glm::vec3 a(r->fromX, r->fromY, (float)r->fromZ * SCALE_Z + 1);
-        glm::vec3 b(r->toX, r->toY, (float)r->toZ * SCALE_Z + 1);
+        glm::vec3 a(r->fromPosition), b(r->toPosition);
+        a.z = a.z * SCALE_Z;
+        b.z = b.z * SCALE_Z;
+
         glm::vec3 m((a.x + b.x) * 0.5,
                     (a.y + b.y) * 0.5,
-                    (a.z + b.z) * 0.5f + (float)r->distance * 0.5f);
+                    (a.z + b.z) * 0.5f + r->distance.toFloat() * 0.5f);
 
-        float ta = (float) r->getLastProgress();
-        float tb = (float) r->getProgress();
+        float ta = r->getLastProgress().toFloat();
+        float tb = r->getProgress().toFloat();
         float t = lerp<float>(ta, tb, interp.getT());
 
         glm::vec3 a_to_m(m - a);
@@ -233,12 +236,8 @@ void RenderResourceTransferSystem::render(entityx::EntityManager &entities) {
         glm::vec3 da_to_dm(dm - da);
         glm::vec3 dda(da + da_to_dm * t);
 
-        //glm::vec3 x = a * (1-t) + b * t;
-        glm::vec3 x(dda);
-        //std::cout << dda.x << "," << dda.y << "," << dda.z << std::endl;
-
         glPushMatrix();
-        glTranslatef(x.x, x.y, x.z);
+        glTranslatef(dda.x, dda.y, dda.z);
         glTranslatef(-0.5f, -0.5f, 0.0f);
         glm::vec3 color(1.0, 0.0, 1.0);
         glBegin(GL_QUADS);
