@@ -2,6 +2,7 @@
 #define STRAT_GAME_CLIENT_HH
 
 #include "Sim.hh"
+#include "InterpState.hh"
 #include "common/Message.hh"
 
 #include <enet/enet.h>
@@ -25,12 +26,16 @@ struct Client {
         return *sim;
     }    
 
-    void update();
+    void update(double dt);
 
     void order(const Order &order);
 
     bool isStarted() const {
         return sim != NULL;
+    }
+
+    const InterpState &getInterp() const {
+        return interp;
     }
 
 private:
@@ -45,7 +50,7 @@ private:
     PlayerId playerId;
 
     bool tickRunning;
-    double tickStartTime;
+    InterpState interp;
 
     void sendMessage(const Message &);
     void handleMessage(const Message &);

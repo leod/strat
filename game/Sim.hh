@@ -8,6 +8,8 @@
 #include "common/GameSettings.hh"
 #include "common/Order.hh"
 
+#include <entityx/entityx.h>
+
 #include <vector>
 #include <cassert>
 
@@ -16,11 +18,21 @@ struct Sim {
 
     void runTick(const std::vector<Order> &orders);
 
-    SimState &getState();
     const SimState &getState() const;
+
+    entityx::EntityManager &getEntities() {
+        return state.entities;
+    }
+
+    const entityx::EntityManager &getEntities() const {
+        return state.entities;
+    }
 
 private:
     SimState state;
+
+    MinerBuildingSystem minerBuildingSystem;
+    ResourceTransferSystem resourceTransferSystem;
 };
 
 #endif

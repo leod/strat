@@ -2,6 +2,7 @@
 #include "Config.hh"
 #include "Map.hh"
 #include "Client.hh"
+#include "InterpState.hh"
 
 #include <entityx/entityx.h>
 
@@ -62,35 +63,43 @@ int main(int argc, char *argv[]) {
     Client client("leo");
     client.connect("192.168.11.41", 1234);
 
+    std::cout << "Waiting for the game to start" << std::endl;
     while (!client.isStarted()) {
-        std::cout << "Waiting for the game to start" << std::endl;
-        client.update();
+        client.update(0.0);
     }
+    std::cout << "Game started" << std::endl;
 
     Sim &sim(client.getSim());
-    SimState &simState(sim.getState());
-    Map &map(simState.getMap());
+    const SimState &simState(sim.getState());
+    const Map &map(simState.getMap());
     TerrainMesh terrainMesh(map);
+    const InterpState &interp(client.getInterp());
 
-    simState.systems.add<RenderBuildingSystem>(map);
-    simState.systems.configure();
+    RenderBuildingSystem renderBuildingSystem(map);
+    RenderResourceTransferSystem renderResourceTransferSystem(map, interp);
 
     size_t frames = 0, fps = 0;
     double lastFrameTime = glfwGetTime();
 
+    double frameStartTime = glfwGetTime();
+
     bool quit = false;
     bool wasPressB = false, wasPressN = false;
     while (!quit && !glfwWindowShouldClose(window)) {
+        double dt = glfwGetTime() - frameStartTime;
+        frameStartTime = glfwGetTime();
+
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        client.update();
+        client.update(dt);
 
         setupGraphics(config, view);
         terrainMesh.draw();
         
-        simState.systems.system<RenderBuildingSystem>()->render(simState.entities);
-
+        renderBuildingSystem.render(sim.getEntities());
+        renderResourceTransferSystem.render(sim.getEntities());
+        
         drawCursor(view);
 
         float scrollSpeed = 0.3;
@@ -124,7 +133,7 @@ int main(int argc, char *argv[]) {
                 Order order(Order::BUILD);
                 order.build.x = static_cast<uint16_t>(view.targetX);
                 order.build.y = static_cast<uint16_t>(view.targetY);
-                order.build.type = BUILDING_STORE;
+                order.build.type = BUILDING_MINER;
 
                 client.order(order);
             }
@@ -136,7 +145,7 @@ int main(int argc, char *argv[]) {
                 Order order(Order::BUILD);
                 order.build.x = static_cast<uint16_t>(view.targetX);
                 order.build.y = static_cast<uint16_t>(view.targetY);
-                order.build.type = BUILDING_BASE;
+                order.build.type = BUILDING_STORE;
 
                 client.order(order);
             }

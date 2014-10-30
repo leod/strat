@@ -11,10 +11,9 @@ void Sim::runTick(const std::vector<Order> &orders) {
         if (state.isOrderValid(order))
             state.runOrder(order);
     }
-}
 
-SimState &Sim::getState() {
-    return state;
+    minerBuildingSystem.tick(state);
+    resourceTransferSystem.tick(state);
 }
 
 const SimState &Sim::getState() const {

@@ -8,13 +8,13 @@
 #include <cassert>
 
 Client::Client(const std::string &username)
-    : username(username)
-    , client(NULL)
-    , peer(NULL)
-    , sim(NULL)
-    , playerId(0) 
-    , tickRunning(false)
-    , tickStartTime(0) {
+    : username(username),
+      client(NULL),
+      peer(NULL),
+      sim(NULL),
+      playerId(0), 
+      tickRunning(false),
+      interp(settings) {
 }
 
 Client::~Client() {
@@ -46,8 +46,7 @@ void Client::connect(const std::string &host, int port) {
     } else {
         enet_peer_reset(peer);
 
-        if (client == NULL)
-            throw std::runtime_error("Failed to connect");
+        throw std::runtime_error("Failed to connect");
     }
 
     // Say hello
@@ -56,9 +55,10 @@ void Client::connect(const std::string &host, int port) {
     sendMessage(message);
 }
 
-void Client::update() {
-    if (tickRunning
-        && glfwGetTime() - tickStartTime > settings.tickLengthMs / 1000.0f) {
+void Client::update(double dt) {
+    interp.update(dt);
+
+    if (tickRunning && interp.isTickDone()) {
         tickRunning = false;
 
         Message message(Message::CLIENT_TICK_DONE);
@@ -128,8 +128,8 @@ void Client::handleMessage(const Message &message) {
 
         if (sim) {
             sim->runTick(message.server_tick.orders);
+            interp.startTick();
             tickRunning = true;
-            tickStartTime = glfwGetTime();
         }
         return;
 

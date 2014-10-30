@@ -1,3 +1,5 @@
+#pragma once
+
 /*
 Copyright (c) 2006 Henry Strickland & Ryan Seto
 
@@ -52,10 +54,10 @@ public:
 	Fixed& operator =(int a) { g= Fixed(a).g; return *this; }
 	Fixed& operator =(long a) { g= Fixed(a).g; return *this; }
 
-	operator float() { return g * (float)STEP(); }
-	operator double() { return g * (double)STEP(); }
-	operator int() { return g>>BP; }
-	operator long() { return g>>BP; }
+	operator float() const { return g * (float)STEP(); }
+	operator double() const { return g * (double)STEP(); }
+	operator int() const { return g>>BP; }
+	operator long() const { return g>>BP; }
 
 	Fixed operator +() const { return Fixed(RAW,g); }
 	Fixed operator -() const { return Fixed(RAW,-g); }
@@ -155,23 +157,23 @@ inline bool operator  <(double a, const Fixed& b) { return Fixed(a)  < b; }
 inline bool operator  >(double a, const Fixed& b) { return Fixed(a)  > b; }
 
 
-int& operator +=(int& a, const Fixed& b) { a = (Fixed)a + b; return a; }
-int& operator -=(int& a, const Fixed& b) { a = (Fixed)a - b; return a; }
-int& operator *=(int& a, const Fixed& b) { a = (Fixed)a * b; return a; }
-int& operator /=(int& a, const Fixed& b) { a = (Fixed)a / b; return a; }
+inline int& operator +=(int& a, const Fixed& b) { a = (Fixed)a + b; return a; }
+inline int& operator -=(int& a, const Fixed& b) { a = (Fixed)a - b; return a; }
+inline int& operator *=(int& a, const Fixed& b) { a = (Fixed)a * b; return a; }
+inline int& operator /=(int& a, const Fixed& b) { a = (Fixed)a / b; return a; }
 
-long& operator +=(long& a, const Fixed& b) { a = (Fixed)a + b; return a; }
-long& operator -=(long& a, const Fixed& b) { a = (Fixed)a - b; return a; }
-long& operator *=(long& a, const Fixed& b) { a = (Fixed)a * b; return a; }
-long& operator /=(long& a, const Fixed& b) { a = (Fixed)a / b; return a; }
+inline long& operator +=(long& a, const Fixed& b) { a = (Fixed)a + b; return a; }
+inline long& operator -=(long& a, const Fixed& b) { a = (Fixed)a - b; return a; }
+inline long& operator *=(long& a, const Fixed& b) { a = (Fixed)a * b; return a; }
+inline long& operator /=(long& a, const Fixed& b) { a = (Fixed)a / b; return a; }
 
-float& operator +=(float& a, const Fixed& b) { a = a + b; return a; }
-float& operator -=(float& a, const Fixed& b) { a = a - b; return a; }
-float& operator *=(float& a, const Fixed& b) { a = a * b; return a; }
-float& operator /=(float& a, const Fixed& b) { a = a / b; return a; }
+inline float& operator +=(float& a, const Fixed& b) { a = a + b; return a; }
+inline float& operator -=(float& a, const Fixed& b) { a = a - b; return a; }
+inline float& operator *=(float& a, const Fixed& b) { a = a * b; return a; }
+inline float& operator /=(float& a, const Fixed& b) { a = a / b; return a; }
 
-double& operator +=(double& a, const Fixed& b) { a = a + b; return a; }
-double& operator -=(double& a, const Fixed& b) { a = a - b; return a; }
-double& operator *=(double& a, const Fixed& b) { a = a * b; return a; }
-double& operator /=(double& a, const Fixed& b) { a = a / b; return a; }
+inline double& operator +=(double& a, const Fixed& b) { a = a + b; return a; }
+inline double& operator -=(double& a, const Fixed& b) { a = a - b; return a; }
+inline double& operator *=(double& a, const Fixed& b) { a = a * b; return a; }
+inline double& operator /=(double& a, const Fixed& b) { a = a / b; return a; }
 

@@ -2,6 +2,7 @@
 
 #include "Math.hh"
 #include "Map.hh"
+#include "InterpState.hh"
 
 #include <GL/glu.h>
 
@@ -193,8 +194,8 @@ void RenderBuildingSystem::render(entityx::EntityManager &entities) {
         glPushMatrix();
         glTranslatef(building->getX(), building->getY(),
                      map.point(building->getX(), building->getY()).height);
-        glScalef(building->getTypeInfo().sizeX - 1.0f,
-                 building->getTypeInfo().sizeY - 1.0f,
+        glScalef(building->getTypeInfo().sizeX,
+                 building->getTypeInfo().sizeY,
                  building->getTypeInfo().sizeZ);
         assert(gameObject->getOwner() > 0 && gameObject->getOwner()-1 < 4);
         glm::vec3 color(playerColors[gameObject->getOwner()-1]);
@@ -209,6 +210,43 @@ void RenderBuildingSystem::render(entityx::EntityManager &entities) {
 void RenderBuildingSystem::receive(const BuildingCreated &event) {
 }
 
+void RenderResourceTransferSystem::render(entityx::EntityManager &entities) {
+    ResourceTransfer::Handle r;
+    for (auto entity : entities.entities_with_components(r)) {
+        glm::vec3 a(r->fromX, r->fromY, (float)r->fromZ + 1);
+        glm::vec3 b(r->toX, r->toY, (float)r->toZ + 1);
+        glm::vec3 m((a.x + b.x) * 0.5,
+                    (a.y + b.y) * 0.5,
+                    (a.z + b.z) * 0.5f + (float)r->distance * 0.5f);
+
+        float ta = (float) r->getLastProgress();
+        float tb = (float) r->getProgress();
+        float t = lerp<float>(ta, tb, interp.getT());
+
+        glm::vec3 a_to_m(m - a);
+        glm::vec3 da(a + a_to_m * t);
+        glm::vec3 m_to_b(b - m);
+        glm::vec3 dm(m + m_to_b * t);
+
+        glm::vec3 da_to_dm(dm - da);
+        glm::vec3 dda(da + da_to_dm * t);
+
+        //glm::vec3 x = a * (1-t) + b * t;
+        glm::vec3 x(dda);
+        std::cout << dda.x << "," << dda.y << "," << dda.z << std::endl;
+
+        glPushMatrix();
+        glTranslatef(x.x, x.y, x.z);
+        glTranslatef(-0.5f, -0.5f, 0.0f);
+        glm::vec3 color(1.0, 0.0, 1.0);
+        glBegin(GL_QUADS);
+        glColor4f(color.x, color.y, color.z, 1.0f);
+        drawCube();
+        glEnd();
+        glPopMatrix();
+    }
+}
+
 void setupGraphics(const Config &config, const View &view) {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -218,7 +256,7 @@ void setupGraphics(const Config &config, const View &view) {
     
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    gluLookAt(view.targetX, view.targetY, view.height + view.distance,
+    gluLookAt(view.targetX, view.targetY - 15.0f, view.height + view.distance,
               view.targetX, view.targetY, view.height,
               0.0, 1.0, 0.0);
 

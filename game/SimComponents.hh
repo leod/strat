@@ -2,14 +2,18 @@
 #define STRAT_GAME_SIM_COMPONENTS_HH
 
 #include "Map.hh"
+#include "Math.hh"
 #include "common/Defs.hh"
 
 #include <entityx/entityx.h>
+#include <Fixed.hh>
 
-struct GameObject : public entityx::Component<GameObject> {
+using entityx::Entity;
+
+struct GameObject : entityx::Component<GameObject> {
     GameObject(PlayerId owner, ObjectId id)
-        : owner(owner)
-        , id(id) {
+        : owner(owner),
+          id(id) {
     }
 
     PlayerId getOwner() const { return owner; }
@@ -20,7 +24,7 @@ private:
     const ObjectId id;
 };
 
-struct Building : public entityx::Component<Building> {
+struct Building : entityx::Component<Building> {
     Building(BuildingType type, size_t x, size_t y)
         : type(type), x(x), y(y) {
         assert(type >= 0 && type < BUILDING_MAX);
@@ -40,8 +44,8 @@ private:
     size_t x, y;
 };
 
-struct MinerBuilding : public entityx::Component<MinerBuilding> {
-    friend struct MinerSystem;
+struct MinerBuilding : entityx::Component<MinerBuilding> {
+    friend struct MinerBuildingSystem;
 
     MinerBuilding(ResourceType resource)
         : resource(resource), amountStored(0) {
@@ -50,18 +54,51 @@ struct MinerBuilding : public entityx::Component<MinerBuilding> {
 private:
     const ResourceType resource;
 
-    size_t amountStored;
+    Fixed amountStored;
 };
 
-struct ResourceTransfer : public entityx::Component<ResourceTransfer> {
+class ResourceTransfer : public entityx::Component<ResourceTransfer> {
+    Fixed lastProgress; // e.g. for interpolation
+    Fixed progress;
+
+public:
     friend struct ResourceTransferSystem;
 
-private:
-    size_t numSteps;
-    size_t curStep; 
+    const Entity fromEntity;
+    const Entity toEntity;
+
+    const Fixed fromX;
+    const Fixed fromY;
+    const Fixed fromZ;
+    const Fixed toX;
+    const Fixed toY;
+    const Fixed toZ;
+    const ResourceType resource;
+    const size_t amount;
+    const Fixed distance;
+
+    ResourceTransfer(Entity fromEntity, Entity toEntity,
+                     Fixed fromX, Fixed fromY, Fixed fromZ,
+                     Fixed toX, Fixed toY, Fixed toZ,
+                     ResourceType resource,
+                     size_t amount)
+        : lastProgress(0), progress(0),
+          fromEntity(fromEntity),
+          toEntity(toEntity),
+          fromX(fromX), fromY(fromY), fromZ(fromZ),
+          toX(toX), toY(toY), toZ(toZ),
+          resource(resource),
+          amount(amount),
+          distance(((std::max(fromX, toX) - std::min(fromX, toX)) +
+                   ((std::max(fromY, toY) - std::min(fromY, toY))))) {
+        assert(distance > Fixed(0));
+    }
+
+    Fixed getProgress() const { return progress; }
+    Fixed getLastProgress() const { return lastProgress; }
 };
 
-struct BuildingCreated : entityx::Event<BuildingCreated> {
+struct BuildingCreated : public entityx::Event<BuildingCreated> {
     BuildingCreated(entityx::Entity entity)
         : entity(entity) {
     }

@@ -119,9 +119,9 @@ int main() {
     settings.mapW = 220;
     settings.mapH = 220;
     settings.heightLimit = 10;
-    settings.tickLengthMs = 100;
+    settings.tickLengthMs = 200;
 
-    size_t numWaitPlayers = 1;
+    size_t numWaitPlayers = 2;
 
     ENetAddress address;
     address.host = ENET_HOST_ANY;
@@ -133,6 +133,8 @@ int main() {
         std::cerr << "Failed to create host." << std::endl;
         return 1;
     }
+
+    std::cout << "Server started" << std::endl;
 
     bool quit = false;
     while (!quit) {
@@ -159,6 +161,7 @@ int main() {
 
                 if (gameStarted) {
                     std::cout << "Rejecting client since game has started" << std::endl;
+                    enet_peer_reset(event.peer);
                     // TODO: Cleanup ENet stuff?
                     break;
                 }

@@ -1,7 +1,7 @@
 #include "common/Defs.hh"
 
 BuildingTypeInfo buildingTypeInfo[BUILDING_MAX] = {
-    { 6, 6, 4 },
-    { 3, 3, 7 },
-    { 3, 3, 3 }
+    { 5, 5, 3 },
+    { 2, 1, 5 },
+    { 2, 2, 2 }
 };

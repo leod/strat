@@ -4,8 +4,12 @@
 #include <cstdint>
 #include <cstddef>
 
-typedef uint16_t PlayerId; // Valid Ids are > 0
-typedef uint32_t ObjectId; // Likewise
+typedef uint16_t PlayerId; // Valid client ids are > 0
+typedef uint32_t ObjectId; // Valid object ids are > 0
+
+enum {
+    PLAYER_NEUTRAL
+};
 
 enum BuildingType {
     BUILDING_BASE,

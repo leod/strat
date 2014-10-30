@@ -10,6 +10,7 @@
 #include <GL/glew.h>
 
 struct Map;
+struct InterpState;
 
 struct View {
     float targetX;
@@ -51,11 +52,7 @@ private:
 struct RenderBuilding : public entityx::Component<RenderBuilding> {
 };
 
-struct RenderEvent : public entityx::Event<RenderEvent> {
-};
-
 struct RenderBuildingSystem :
-    public entityx::System<RenderBuildingSystem>,
     public entityx::Receiver<RenderBuildingSystem> {
     RenderBuildingSystem(const Map &map) : map(map) {}
 
@@ -64,16 +61,19 @@ struct RenderBuildingSystem :
 
     void render(entityx::EntityManager &entities);
 
-    void update(entityx::EntityManager &, entityx::EventManager &,
-                entityx::TimeDelta) {
-    }
-
 private:
     const Map &map;
 };
 
 struct RenderResourceTransferSystem {
+    RenderResourceTransferSystem(const Map &map, const InterpState &interp)
+        : map(map), interp(interp) {}
+
     void render(entityx::EntityManager &entities);
+
+private:
+    const Map &map;
+    const InterpState &interp;
 };
 
 void setupGraphics(const Config &, const View &);
