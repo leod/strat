@@ -3,6 +3,7 @@
 #include "Map.hh"
 #include "Client.hh"
 #include "InterpState.hh"
+#include "Input.hh"
 
 #include <entityx/entityx.h>
 
@@ -50,11 +51,6 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    View view;
-    view.targetX = 64;
-    view.targetY = 64;
-    view.distance = 40.0f;
-
     if (enet_initialize() != 0) {
         std::cerr << "Failed to initialize ENet" << std::endl;
         return 1;
@@ -72,11 +68,14 @@ int main(int argc, char *argv[]) {
     Sim &sim(client.getSim());
     const SimState &simState(sim.getState());
     const Map &map(simState.getMap());
-    TerrainMesh terrainMesh(map);
     const InterpState &interp(client.getInterp());
 
+    TerrainMesh terrainMesh(map);
     RenderBuildingSystem renderBuildingSystem(map);
     RenderResourceTransferSystem renderResourceTransferSystem(map, interp);
+
+    Input input(window, client);
+    const View &view(input.getView());
 
     size_t frames = 0, fps = 0;
     double lastFrameTime = glfwGetTime();
@@ -84,7 +83,6 @@ int main(int argc, char *argv[]) {
     double frameStartTime = glfwGetTime();
 
     bool quit = false;
-    bool wasPressB = false, wasPressN = false;
     while (!quit && !glfwWindowShouldClose(window)) {
         double dt = glfwGetTime() - frameStartTime;
         frameStartTime = glfwGetTime();
@@ -92,6 +90,7 @@ int main(int argc, char *argv[]) {
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        input.update();
         client.update(dt);
 
         setupGraphics(config, view);
@@ -101,57 +100,6 @@ int main(int argc, char *argv[]) {
         renderResourceTransferSystem.render(sim.getEntities());
         
         drawCursor(view);
-
-        float scrollSpeed = 0.3;
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS
-            && view.targetY < map.getSizeY()) {
-            view.targetY = std::min(view.targetY + scrollSpeed, map.getSizeY()-1.0f);
-        }
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS
-            && view.targetX > 0) {
-            view.targetX = std::max(view.targetX - scrollSpeed, 0.0f);
-        }
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS
-            && view.targetY > 0) {
-            view.targetY = std::max(view.targetY - scrollSpeed, 0.0f);
-        }
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS
-            && view.targetX < map.getSizeX()) {
-            view.targetX = std::min(view.targetX + scrollSpeed, map.getSizeX()-1.0f);
-        }
-        if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS && view.distance > 3.0f) {
-            view.distance -= 1.0f;
-        }
-        if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) {
-            view.distance += 1.0f;
-        }
-
-        if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
-            if (!wasPressB) {
-                wasPressB = true;
-
-                Order order(Order::BUILD);
-                order.build.x = static_cast<uint16_t>(view.targetX);
-                order.build.y = static_cast<uint16_t>(view.targetY);
-                order.build.type = BUILDING_MINER;
-
-                client.order(order);
-            }
-        } else wasPressB = false;
-        if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS) {
-            if (!wasPressN) {
-                wasPressN = true;
-
-                Order order(Order::BUILD);
-                order.build.x = static_cast<uint16_t>(view.targetX);
-                order.build.y = static_cast<uint16_t>(view.targetY);
-                order.build.type = BUILDING_STORE;
-
-                client.order(order);
-            }
-        } else wasPressN = false;
-
-        view.height = map.point(view.targetX, view.targetY).height;
 
         glfwSwapBuffers(window);
         glfwPollEvents();
