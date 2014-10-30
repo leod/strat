@@ -52,6 +52,9 @@ private:
     bool tickRunning;
     InterpState interp;
 
+    bool haveQueuedTick;
+    std::vector<Order> queuedOrders;
+
     void sendMessage(const Message &);
     void handleMessage(const Message &);
 };

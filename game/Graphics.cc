@@ -11,6 +11,8 @@
 
 #define checkError() printOglError(__FILE__, __LINE__)
 
+#define SCALE_Z 1.5f
+
 static glm::vec3 playerColors[4] = {
     glm::vec3(0.0, 1.0, 1.0),
     glm::vec3(1.0, 1.0, 0.0),
@@ -35,10 +37,10 @@ TerrainMesh::TerrainMesh(const Map &map)
 void TerrainMesh::init() {
     for (size_t x = 0; x < map.getSizeX() - 1; x++) {
         for (size_t y = 0; y < map.getSizeY() - 1; y++) {
-            glm::vec3 a(x, y, map.point(x, y).height);
-            glm::vec3 b(x+1, y, map.point(x+1, y).height);
-            glm::vec3 c(x+1, y+1, map.point(x+1, y+1).height);
-            glm::vec3 d(x, y+1, map.point(x, y+1).height);
+            glm::vec3 a(x, y, map.point(x, y).height * SCALE_Z);
+            glm::vec3 b(x+1, y, map.point(x+1, y).height * SCALE_Z);
+            glm::vec3 c(x+1, y+1, map.point(x+1, y+1).height * SCALE_Z);
+            glm::vec3 d(x, y+1, map.point(x, y+1).height * SCALE_Z);
 
             glm::vec3 ca(color(a.z));
             glm::vec3 cb(color(b.z));
@@ -193,7 +195,7 @@ void RenderBuildingSystem::render(entityx::EntityManager &entities) {
          entities.entities_with_components(gameObject, building)) {
         glPushMatrix();
         glTranslatef(building->getX(), building->getY(),
-                     map.point(building->getX(), building->getY()).height);
+                     map.point(building->getX(), building->getY()).height * SCALE_Z);
         glScalef(building->getTypeInfo().sizeX,
                  building->getTypeInfo().sizeY,
                  building->getTypeInfo().sizeZ);
@@ -213,8 +215,8 @@ void RenderBuildingSystem::receive(const BuildingCreated &event) {
 void RenderResourceTransferSystem::render(entityx::EntityManager &entities) {
     ResourceTransfer::Handle r;
     for (auto entity : entities.entities_with_components(r)) {
-        glm::vec3 a(r->fromX, r->fromY, (float)r->fromZ + 1);
-        glm::vec3 b(r->toX, r->toY, (float)r->toZ + 1);
+        glm::vec3 a(r->fromX, r->fromY, (float)r->fromZ * SCALE_Z + 1);
+        glm::vec3 b(r->toX, r->toY, (float)r->toZ * SCALE_Z + 1);
         glm::vec3 m((a.x + b.x) * 0.5,
                     (a.y + b.y) * 0.5,
                     (a.z + b.z) * 0.5f + (float)r->distance * 0.5f);
@@ -233,7 +235,7 @@ void RenderResourceTransferSystem::render(entityx::EntityManager &entities) {
 
         //glm::vec3 x = a * (1-t) + b * t;
         glm::vec3 x(dda);
-        std::cout << dda.x << "," << dda.y << "," << dda.z << std::endl;
+        //std::cout << dda.x << "," << dda.y << "," << dda.z << std::endl;
 
         glPushMatrix();
         glTranslatef(x.x, x.y, x.z);
@@ -287,7 +289,7 @@ void setupGraphics(const Config &config, const View &view) {
 void drawCursor(const View &view) {
     float tx = static_cast<float>(static_cast<int>(view.targetX));
     float ty = static_cast<float>(static_cast<int>(view.targetY));
-    float tz = view.height + 0.001;
+    float tz = view.height * SCALE_Z + 0.001;
 
     float s = 0.5f;
 

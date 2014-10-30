@@ -13,12 +13,12 @@
 struct ClientInfo {
     ENetPeer *peer;
 
-    bool tickDone;
+    size_t ticksDone;
 
     PlayerInfo player;
 
     ClientInfo(PlayerId id, ENetPeer *peer)
-        : peer(peer), tickDone(true), player() {
+        : peer(peer), ticksDone(0), player() {
         player.id = id;
     }
 };
@@ -31,6 +31,7 @@ bool gameStarted = false;
 PlayerId playerCounter = 0;
 std::vector<ClientInfo *> clients;
 
+size_t ticksStarted = 0;
 std::vector<Order> nextOrders;
 
 void sendMessage(ClientInfo *client, const Message &message) {
@@ -46,20 +47,25 @@ void broadcast(const Message &message) {
 }
 
 void startTick() {
-    std::cout << "Starting tick" << std::endl;
-
     assert(gameStarted);
-    for (auto client : clients)
-        assert(client->tickDone);
+    for (auto client : clients) {
+        assert(client->ticksDone <= ticksStarted);
+        assert(ticksStarted - client->ticksDone <= 2);
+
+        std::cout << "Client at " << client->ticksDone << std::endl;
+    }
+
+    std::cout << "Starting tick " << ticksStarted + 1 << std::endl;
 
     Message message(Message::SERVER_TICK);
     message.server_tick.orders = nextOrders;
     broadcast(message);
 
+    ticksStarted++;
     nextOrders.clear();
 
-    for (auto client : clients)
-        client->tickDone = false;
+    /*for (auto client : clients)
+        client->ticksDone = false;*/
 }
 
 void startGame() {
@@ -100,8 +106,8 @@ void handleMessage(ClientInfo *client, const Message &message) {
         return;
     }
     case Message::CLIENT_TICK_DONE:
-        assert(!client->tickDone);
-        client->tickDone = true;
+        client->ticksDone++;
+        assert(client->ticksDone <= ticksStarted);
         return;
 
     default:
@@ -141,14 +147,20 @@ int main() {
         if (!gameStarted && clients.size() == numWaitPlayers) {
             startGame();
             startTick();
+            startTick();
         }
 
         if (gameStarted) {
-            bool tickDone = true;
-            for (auto client : clients)
-                tickDone = tickDone && client->tickDone;
+            assert(ticksStarted >= 2);
 
-            if (tickDone)
+            bool prevTickDone = true;
+            for (auto client : clients) {
+                assert(client->ticksDone <= ticksStarted);
+
+                prevTickDone = prevTickDone && (client->ticksDone >= ticksStarted - 1);
+            }
+
+            if (prevTickDone)
                 startTick();
         }
 

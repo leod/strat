@@ -14,7 +14,8 @@ Client::Client(const std::string &username)
       sim(NULL),
       playerId(0), 
       tickRunning(false),
-      interp(settings) {
+      interp(settings),
+      haveQueuedTick(false) {
 }
 
 Client::~Client() {
@@ -63,7 +64,17 @@ void Client::update(double dt) {
 
         Message message(Message::CLIENT_TICK_DONE);
         sendMessage(message);
+
+        if (haveQueuedTick) {
+            sim->runTick(queuedOrders);
+            interp.startTick();
+            tickRunning = true;
+            haveQueuedTick = false;
+        }
     }
+
+    if (!tickRunning)
+        std::cout << "WAITING FOR TICK" << std::endl;
 
     ENetEvent event;
     while (enet_host_service(client, &event, 0) > 0) {
@@ -124,12 +135,18 @@ void Client::handleMessage(const Message &message) {
         return;
 
     case Message::SERVER_TICK:
-        //std::cout << "Starting tick" << std::endl;
+        assert(!haveQueuedTick);
 
         if (sim) {
-            sim->runTick(message.server_tick.orders);
-            interp.startTick();
-            tickRunning = true;
+            if (!tickRunning) {
+                sim->runTick(message.server_tick.orders);
+                interp.startTick();
+                tickRunning = true;
+            } else {
+                queuedOrders = message.server_tick.orders;
+                haveQueuedTick = true;
+                std::cout << "Queued tick at t=" << interp.getT() / (settings.tickLengthMs / 1000.0f) << std::endl;
+            }
         }
         return;
 
