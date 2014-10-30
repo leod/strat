@@ -127,7 +127,7 @@ int main() {
     settings.heightLimit = 10;
     settings.tickLengthMs = 200;
 
-    size_t numWaitPlayers = 2;
+    size_t numWaitPlayers = 1;
 
     ENetAddress address;
     address.host = ENET_HOST_ANY;

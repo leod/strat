@@ -1,2 +1,2 @@
-C:\MinGW\bin\ar.exe cr libentityx.a  CMakeFiles/entityx.dir/entityx/System.cc.obj CMakeFiles/entityx.dir/entityx/Event.cc.obj CMakeFiles/entityx.dir/entityx/Entity.cc.obj CMakeFiles/entityx.dir/entityx/help/Timer.cc.obj CMakeFiles/entityx.dir/entityx/help/Pool.cc.obj
-C:\MinGW\bin\ranlib.exe libentityx.a
+C:\PROGRA~2\MINGW-~1\X32-48~1.1-W\mingw32\bin\ar.exe cr libentityx.a  CMakeFiles/entityx.dir/entityx/System.cc.obj CMakeFiles/entityx.dir/entityx/Event.cc.obj CMakeFiles/entityx.dir/entityx/Entity.cc.obj CMakeFiles/entityx.dir/entityx/help/Timer.cc.obj CMakeFiles/entityx.dir/entityx/help/Pool.cc.obj
+C:\PROGRA~2\MINGW-~1\X32-48~1.1-W\mingw32\bin\ranlib.exe libentityx.a

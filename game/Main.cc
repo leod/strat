@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     }
 
     Client client("leo");
-    client.connect("192.168.11.41", 1234);
+    client.connect("localhost", 1234);
 
     std::cout << "Waiting for the game to start" << std::endl;
     while (!client.isStarted()) {

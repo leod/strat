@@ -1,2 +1,2 @@
-C:/Users/lars/Dropbox/strats/lib/entityx-master/CMakeFiles/entityx.dir
-C:/Users/lars/Dropbox/strats/lib/entityx-master/CMakeFiles/entityx_shared.dir
+C:/Users/Leo/Projects/strat/lib/entityx-master/CMakeFiles/entityx.dir
+C:/Users/Leo/Projects/strat/lib/entityx-master/CMakeFiles/entityx_shared.dir

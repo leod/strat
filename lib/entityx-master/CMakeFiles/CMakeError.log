@@ -1,65 +1,18 @@
-Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
-Compiler: cl 
-Build flags: 
-Id flags: 
-
-The output was:
-Das System kann die angegebene Datei nicht finden
-
-
-Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
-Compiler: cl 
-Build flags: 
-Id flags: -c
-
-The output was:
-Das System kann die angegebene Datei nicht finden
-
-
-Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
-Compiler: cl 
-Build flags: 
-Id flags: -Aa
-
-The output was:
-Das System kann die angegebene Datei nicht finden
-
-
-Checking whether the C compiler is IAR using "" did not match "IAR .+ Compiler":
-Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
-Compiler: cl 
-Build flags: 
-Id flags: 
-
-The output was:
-Das System kann die angegebene Datei nicht finden
-
-
-Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
-Compiler: cl 
-Build flags: 
-Id flags: -c
-
-The output was:
-Das System kann die angegebene Datei nicht finden
-
-
-Checking whether the CXX compiler is IAR using "" did not match "IAR .+ Compiler":
 Performing C++ SOURCE FILE Test ENTITYX_HAVE_CXX11_STDLIB failed with the following output:
-Change Dir: C:/Users/lars/Dropbox/strats/lib/entityx-master/CMakeFiles/CMakeTmp
+Change Dir: C:/Users/Leo/Projects/strat/lib/entityx-master/CMakeFiles/CMakeTmp
 
-Run Build Command:"C:/MinGW/bin/mingw32-make.exe" "cmTryCompileExec307082200/fast"
-C:/MinGW/bin/mingw32-make.exe -f CMakeFiles\cmTryCompileExec307082200.dir\build.make CMakeFiles/cmTryCompileExec307082200.dir/build
-mingw32-make.exe[1]: Entering directory 'C:/Users/lars/Dropbox/strats/lib/entityx-master/CMakeFiles/CMakeTmp'
-"C:\Program Files (x86)\CMake\bin\cmake.exe" -E cmake_progress_report C:\Users\lars\Dropbox\strats\lib\entityx-master\CMakeFiles\CMakeTmp\CMakeFiles 1
-Building CXX object CMakeFiles/cmTryCompileExec307082200.dir/src.cxx.obj
-C:\MinGW\bin\g++.exe    -pedantic -Werror -Wall -Wextra -Wno-unused-parameter -Wno-error=unused-variable -Wno-error=sign-compare -std=c++11 -stdlib=libc++ -DENTITYX_HAVE_CXX11_STDLIB   -o CMakeFiles\cmTryCompileExec307082200.dir\src.cxx.obj -c C:\Users\lars\Dropbox\strats\lib\entityx-master\CMakeFiles\CMakeTmp\src.cxx
-g++.exe: error: unrecognized command line option '-stdlib=libc++'
-CMakeFiles\cmTryCompileExec307082200.dir\build.make:56: recipe for target 'CMakeFiles/cmTryCompileExec307082200.dir/src.cxx.obj' failed
-mingw32-make.exe[1]: *** [CMakeFiles/cmTryCompileExec307082200.dir/src.cxx.obj] Error 1
-mingw32-make.exe[1]: Leaving directory 'C:/Users/lars/Dropbox/strats/lib/entityx-master/CMakeFiles/CMakeTmp'
-Makefile:117: recipe for target 'cmTryCompileExec307082200/fast' failed
-mingw32-make.exe: *** [cmTryCompileExec307082200/fast] Error 2
+Run Build Command:C:/PROGRA~2/MINGW-~1/X32-48~1.1-W/mingw32/bin/mingw32-make.exe "cmTryCompileExec839958567/fast"
+C:/PROGRA~2/MINGW-~1/X32-48~1.1-W/mingw32/bin/mingw32-make.exe -f CMakeFiles\cmTryCompileExec839958567.dir\build.make CMakeFiles/cmTryCompileExec839958567.dir/build
+mingw32-make.exe[1]: Entering directory 'C:/Users/Leo/Projects/strat/lib/entityx-master/CMakeFiles/CMakeTmp'
+"C:\Program Files (x86)\CMake 2.8\bin\cmake.exe" -E cmake_progress_report C:\Users\Leo\Projects\strat\lib\entityx-master\CMakeFiles\CMakeTmp\CMakeFiles 1
+Building CXX object CMakeFiles/cmTryCompileExec839958567.dir/src.cxx.obj
+C:\PROGRA~2\MINGW-~1\X32-48~1.1-W\mingw32\bin\G__~1.EXE    -pedantic -Werror -Wall -Wextra -Wno-unused-parameter -Wno-error=unused-variable -Wno-error=sign-compare -std=c++11 -stdlib=libc++  -DENTITYX_HAVE_CXX11_STDLIB   -o CMakeFiles\cmTryCompileExec839958567.dir\src.cxx.obj -c C:\Users\Leo\Projects\strat\lib\entityx-master\CMakeFiles\CMakeTmp\src.cxx
+G__~1.EXE: error: unrecognized command line option '-stdlib=libc++'
+CMakeFiles\cmTryCompileExec839958567.dir\build.make:59: recipe for target 'CMakeFiles/cmTryCompileExec839958567.dir/src.cxx.obj' failed
+mingw32-make.exe[1]: *** [CMakeFiles/cmTryCompileExec839958567.dir/src.cxx.obj] Error 1
+mingw32-make.exe[1]: Leaving directory 'C:/Users/Leo/Projects/strat/lib/entityx-master/CMakeFiles/CMakeTmp'
+Makefile:116: recipe for target 'cmTryCompileExec839958567/fast' failed
+mingw32-make.exe: *** [cmTryCompileExec839958567/fast] Error 2
 
 Source file was:
 

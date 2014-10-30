@@ -1,4 +1,4 @@
-file(REMOVE_RECURSE
+FILE(REMOVE_RECURSE
   "CMakeFiles/entityx.dir/entityx/System.cc.obj"
   "CMakeFiles/entityx.dir/entityx/Event.cc.obj"
   "CMakeFiles/entityx.dir/entityx/Entity.cc.obj"
@@ -9,6 +9,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
-  include(CMakeFiles/entityx.dir/cmake_clean_${lang}.cmake OPTIONAL)
-endforeach()
+FOREACH(lang CXX)
+  INCLUDE(CMakeFiles/entityx.dir/cmake_clean_${lang}.cmake OPTIONAL)
+ENDFOREACH(lang)
