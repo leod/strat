@@ -94,12 +94,12 @@ void Input::update(double dt) {
         tryScroll(scroll);
     }
     if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS && view.distance > 3.0f) {
-        view.distance -= dt * 25.0f;
+        view.distance -= dt * 35.0f;
         if (view.distance < 3.0f)
             view.distance = 3.0f;
     }
     if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) {
-        view.distance += dt * 25.0f;
+        view.distance += dt * 35.0f;
     }
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
         view.angle += dt * 2.0f;

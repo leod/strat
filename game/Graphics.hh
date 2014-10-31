@@ -14,34 +14,6 @@
 struct Map;
 struct InterpState;
 
-struct Vertex {
-    glm::vec3 position, color, normal;
-
-    Vertex(glm::vec3 position,
-           glm::vec3 color,
-           glm::vec3 normal)
-        : position(position)
-        , color(color)
-        , normal(normal) {
-    }
-};
-
-struct TerrainMesh {
-    TerrainMesh(const Map &);
-
-    void draw();
-
-private:
-    void init();
-
-    glm::vec3 color(size_t height);
-
-    const Map &map;
-
-    std::vector<Vertex> vertices;
-    GLuint vertexBuffer;
-};
-
 struct RenderBuilding : public entityx::Component<RenderBuilding> {
 };
 

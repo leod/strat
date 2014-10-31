@@ -19,6 +19,8 @@ struct GridPoint {
 };
 
 struct Map {
+    typedef glm::uvec2 Pos;
+
     Map(size_t sizeX, size_t sizeY);
 
     size_t getSizeX() const { return sizeX; }
@@ -29,6 +31,10 @@ struct Map {
     }
 
     size_t getMaxHeight() const { return maxHeight; }
+
+    bool isPoint(const glm::uvec2 &p) const {
+        return p.x < sizeX && p.y < sizeY;
+    }
 
     GridPoint &point(size_t x, size_t y) {
         assert(x < sizeX);

@@ -18,131 +18,6 @@ static glm::vec3 playerColors[4] = {
     glm::vec3(0.0, 0.0, 1.0)
 };
 
-void printOglError(const char *file, int line) {
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
-        std::cerr << "gl error in file " << file
-                  << " @ line " << line << ": "
-                  << gluErrorString(error) << std::endl;
-    }
-}
-
-TerrainMesh::TerrainMesh(const Map &map)
-    : map(map) {
-    init();
-}
-
-void TerrainMesh::init() {
-    for (size_t x = 0; x < map.getSizeX() - 1; x++) {
-        for (size_t y = 0; y < map.getSizeY() - 1; y++) {
-            glm::vec3 a(x, y, map.point(x, y).height );
-            glm::vec3 b(x+1, y, map.point(x+1, y).height );
-            glm::vec3 c(x+1, y+1, map.point(x+1, y+1).height );
-            glm::vec3 d(x, y+1, map.point(x, y+1).height );
-
-            glm::vec3 ca(color(a.z));
-            glm::vec3 cb(color(b.z));
-            glm::vec3 cc(color(c.z));
-            glm::vec3 cd(color(d.z));
-
-            glm::vec3 n(glm::normalize(glm::cross(b - a, c - a)));
-
-            Vertex va(a, ca, n);
-            Vertex vb(b, cb, n);
-            Vertex vc(c, cc, n);
-            Vertex vd(d, cd, n);
-            
-            vertices.push_back(va);
-            vertices.push_back(vb);
-            vertices.push_back(vc);
-            vertices.push_back(vd);
-        }
-    }
-    
-    glGenBuffers(1, &vertexBuffer);
-
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(),
-        &vertices[0], GL_STATIC_DRAW);
-
-    checkError();
-}
-
-void TerrainMesh::draw() {
-    checkError();
-
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer); 
-    glEnableClientState(GL_VERTEX_ARRAY); // oldschool yo
-    glEnableClientState(GL_COLOR_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
-
-    glVertexPointer(3, GL_FLOAT, sizeof(Vertex),
-        reinterpret_cast<const void *>(offsetof(Vertex, position)));
-    glColorPointer(3, GL_FLOAT, sizeof(Vertex),
-        reinterpret_cast<const void *>(offsetof(Vertex, color)));
-    glNormalPointer(GL_FLOAT, sizeof(Vertex),
-        reinterpret_cast<const void *>(offsetof(Vertex, normal)));
-
-    glDrawArrays(GL_QUADS, 0, vertices.size());
-
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_NORMAL_ARRAY);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    return;
-
-    glBegin(GL_LINES);
-    glColor3f(0.0, 0.0, 0.0);
-
-    for (size_t x = 0; x < map.getSizeX() - 1; x++) {
-        for (size_t y = 0; y < map.getSizeY() - 1; y++) {
-            glm::vec3 a(x, y, map.point(x, y).height);
-            glm::vec3 b(x+1, y, map.point(x+1, y).height);
-            glm::vec3 c(x+1, y+1, map.point(x+1, y+1).height);
-            glm::vec3 d(x, y+1, map.point(x, y+1).height);
-
-            float dz = 0.05f;
-
-            glVertex3f(a.x, a.y, a.z+dz);
-            glVertex3f(b.x, b.y, b.z+dz);
-
-            glVertex3f(a.x, a.y, a.z+dz);
-            glVertex3f(d.x, d.y, d.z+dz);
-
-            glVertex3f(b.x, b.y, b.z+dz);
-            glVertex3f(c.x, c.y, c.z+dz);
-
-            glVertex3f(c.x, c.y, c.z+dz);
-            glVertex3f(d.x, d.y, d.z+dz);
-        }
-    }
-
-    glEnd();
-}
-
-glm::vec3 TerrainMesh::color(size_t height) {
-    /*if (height == 0) return glm::vec3(1, 0, 1);
-    else if (height == 1) return glm::vec3(1, 0, 1);
-    else if (height == 2) return glm::vec3(1, 1, 0);
-    else if (height == 3) return glm::vec3(1, 1, 0);
-    else if (height == 4) return glm::vec3(0, 0, 1);
-    else if (height == 5) return glm::vec3(0, 0, 1);
-    else if (height == 6) return glm::vec3(1, 1, 0);
-    else if (height == 7) return glm::vec3(1, 1, 0);
-    else if (height == 8) return glm::vec3(1, 0, 1);
-    else if (height == 9) return glm::vec3(1, 0, 1);
-    else if (height == 10) return glm::vec3(0, 1, 1);*/
-        
-
-    float t = (float)height / map.getMaxHeight(); 
-    //assert(t >= 0 && t <= 1);
-    //
-    //return glm::vec3(0.5f, 0.5f, 0.5f);
-
-    return glm::vec3(0.4f + t/3, 0.4f + t/3, 0.4f + t/3);
-}
-
 static void drawCube() {
     // front
     glNormal3f(0.0f, 0.0f, -1.0f);
@@ -180,6 +55,15 @@ static void drawCube() {
     glVertex3f(1.0f, 0.0f, 0.0f);
     glVertex3f(1.0f, 0.0f, 1.0f);
     glVertex3f(0.0f, 0.0f, 1.0f);
+}
+
+void printOglError(const char *file, int line) {
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR) {
+        std::cerr << "gl error in file " << file
+                  << " @ line " << line << ": "
+                  << gluErrorString(error) << std::endl;
+    }
 }
 
 void RenderBuildingSystem::configure(entityx::EventManager &events) {
@@ -259,11 +143,12 @@ void setupGraphics(const Config &config, const View &view) {
               view.target.x, view.target.y, view.target.z,
               0.0, 0.0, 1.0);
 
-    GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-    GLfloat mat_shininess[] = { 50.0 };
+    //GLfloat mat_specular[] = { 0.25, 0.25, 0.25, 1.0 };
+    GLfloat mat_specular[] = {0,0,0,0};
+    GLfloat mat_shininess[] = { 10.0 };
     GLfloat light_position[] = { 1, 1, 1, 0.0 };
-    glClearColor (0.0, 0.0, 0.0, 0.0);
-    glShadeModel (GL_SMOOTH);
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    glShadeModel(GL_SMOOTH);
 
     glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
     glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
@@ -281,6 +166,9 @@ void setupGraphics(const Config &config, const View &view) {
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
+
+    //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    //
 }
 
 void drawCursor(const View &view) {

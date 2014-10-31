@@ -4,6 +4,7 @@
 #include "Client.hh"
 #include "InterpState.hh"
 #include "Input.hh"
+#include "Terrain.hh"
 
 #include <entityx/entityx.h>
 

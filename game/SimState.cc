@@ -38,15 +38,12 @@ SimState::SimState(const GameSettings &settings)
 bool SimState::canPlaceBuilding(BuildingType type, const glm::uvec2 &p) const {
     assert(type >= 0 && type < BUILDING_MAX);
 
-    if (p.x >= map.getSizeX()
-        || p.y >= map.getSizeY()) {
-        return false;
-    }
+    if (!map.isPoint(p)) return false;
 
     const BuildingTypeInfo &typeInfo(buildingTypeInfo[type]);
     bool valid = true;
 
-    size_t height = map.point(p.x, p.y).height;
+    size_t height = map.point(p).height;
 
     for (size_t x = p.x > 0 ? p.x - 1 : 0; x < p.x + typeInfo.size.x + 1; x++) {
         if (x >= map.getSizeX()) {
