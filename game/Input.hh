@@ -13,6 +13,8 @@ struct View {
     glm::vec3 position;
     glm::vec3 target;
 
+    float angle;
+
     float distance;
 };
 
@@ -21,7 +23,7 @@ struct Input {
 
     const View &getView() const;
 
-    void update(); 
+    void update(double dt); 
 
 private:
     GLFWwindow *window;
@@ -34,6 +36,8 @@ private:
     bool wasPressB, wasPressN;
 
     View view;
+
+    void tryScroll(const glm::vec2 &delta);
 };
 
 #endif

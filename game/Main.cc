@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
     }
 
     Client client("leo");
-    client.connect("localhost", 1234);
+    client.connect("192.168.11.41", 1234);
 
     std::cout << "Waiting for the game to start" << std::endl;
     while (!client.isStarted()) {
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        input.update();
+        input.update(dt);
         client.update(dt);
 
         setupGraphics(config, view);

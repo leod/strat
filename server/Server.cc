@@ -125,7 +125,7 @@ int main() {
     settings.mapW = 220;
     settings.mapH = 220;
     settings.heightLimit = 10;
-    settings.tickLengthMs = 200;
+    settings.tickLengthMs = 50;
 
     size_t numWaitPlayers = 1;
 

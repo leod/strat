@@ -4,7 +4,9 @@
 #include "Map.hh"
 #include "Client.hh"
 
+#define GLM_FORCE_RADIANS
 #include <GL/glu.h>
+#include <glm/gtx/rotate_vector.hpp>
 
 static Ray calculateViewRay(double mx, double my, const View &view) {
     GLint viewport[4];
@@ -29,17 +31,18 @@ static Ray calculateViewRay(double mx, double my, const View &view) {
 Input::Input(GLFWwindow *window, Client &client)
     : window(window), client(client),
       sim(client.getSim()), map(sim.getState().getMap()),
-      scrollSpeed(0.3f), wasPressB(false), wasPressN(false) {
+      scrollSpeed(3.0f), wasPressB(false), wasPressN(false) {
     view.target.x = 64;
     view.target.y = 64;
     view.distance = 40.0f;
+    view.angle = 0.0f;
 }
 
 const View &Input::getView() const {
     return view;
 }
 
-void Input::update() {
+void Input::update(double dt) {
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
     Ray ray = calculateViewRay(mx, my, view);
@@ -61,32 +64,48 @@ void Input::update() {
         AABB aabb(glm::vec3(building->getPosition()),
                   glm::vec3(building->getPosition() + building->getTypeInfo().size));
 
-        if (aabb.intersectWithRay(ray)) {
+        if (aabb.intersectWithRay(ray, 1.0f, 5000.0f)) {
             std::cout << "HIT " << gameObject->getId() << std::endl;
         }
     }
 
+    glm::vec2 mapDirection(view.target - view.position);
+
+    float moveDelta = scrollSpeed * dt;
+
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS
         && view.target.y < map.getSizeY()) {
-        view.target.y = std::min(view.target.y + scrollSpeed, map.getSizeY()-1.0f);
+        glm::vec2 scroll(mapDirection * moveDelta);
+        tryScroll(scroll);
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS
         && view.target.x > 0) {
-        view.target.x = std::max(view.target.x - scrollSpeed, 0.0f);
+        glm::vec2 scroll(glm::cross(glm::vec3(0, 0, 1), glm::vec3(mapDirection, 0)) * moveDelta);
+        tryScroll(scroll);
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS
         && view.target.y > 0) {
-        view.target.y = std::max(view.target.y - scrollSpeed, 0.0f);
+        glm::vec2 scroll(-mapDirection * moveDelta);
+        tryScroll(scroll);
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS
         && view.target.x < map.getSizeX()) {
-        view.target.x = std::min(view.target.x + scrollSpeed, map.getSizeX()-1.0f);
+        glm::vec2 scroll(-glm::cross(glm::vec3(0, 0, 1), glm::vec3(mapDirection, 0)) * moveDelta);
+        tryScroll(scroll);
     }
     if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS && view.distance > 3.0f) {
-        view.distance -= 1.0f;
+        view.distance -= dt * 25.0f;
+        if (view.distance < 3.0f)
+            view.distance = 3.0f;
     }
     if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) {
-        view.distance += 1.0f;
+        view.distance += dt * 25.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+        view.angle += dt * 2.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+        view.angle -= dt * 2.0f;
     }
 
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
@@ -114,9 +133,21 @@ void Input::update() {
         }
     } else wasPressN = false;
 
-    view.target.z = map.point(view.target.x, view.target.y).height;
-
     view.position.x = view.target.x;
-    view.position.y = view.target.y - 15.0f;
+    view.position.y = view.target.y - 10.0f;
     view.position.z = view.target.z + view.distance;
+
+    glm::vec3 origin_camera(0, -10.0f, view.distance);
+    view.position = view.target + glm::rotateZ(origin_camera, view.angle);
+}
+
+void Input::tryScroll(const glm::vec2 &delta) {
+    view.target += glm::vec3(delta, 0);
+
+    if (view.target.x < 0) view.target.x = 0;
+    if (view.target.x >= map.getSizeX()) view.target.x = map.getSizeX() - 1;
+    if (view.target.y < 0) view.target.y = 0;
+    if (view.target.y >= map.getSizeY()) view.target.y = map.getSizeY() - 1;
+
+    view.target.z = map.point(view.target.x, view.target.y).height;
 }

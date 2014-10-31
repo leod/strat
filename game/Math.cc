@@ -4,8 +4,35 @@
 #include <iostream>
 #include <limits>
 
-bool AABB::intersectWithRay(const Ray &ray, float *distance) const {
-    float tmin, tmax, tymin, tymin, tzmin, tzmax;
+bool AABB::intersectWithRay(const Ray &ray, float t0, float t1, float *distance) const {
+    float tmin, tmax, tymin, tymax, tzmin, tzmax;
+
+    glm::vec3 inv_direction = 1.0f / ray.direction;
+    glm::vec3 parameters[2] = { min, max };
+
+    bool sign[3] = { inv_direction.x < 0,
+                     inv_direction.y < 0,
+                     inv_direction.z < 0 };
+
+    tmin = (parameters[sign[0]].x - ray.origin.x) * inv_direction.x;
+    tmax = (parameters[1-sign[0]].x - ray.origin.x) * inv_direction.x;
+    tymin = (parameters[sign[1]].y - ray.origin.y) * inv_direction.y;
+    tymax = (parameters[1-sign[1]].y - ray.origin.y) * inv_direction.y;
+    if ( (tmin > tymax) || (tymin > tmax) ) 
+            return false;
+    if (tymin > tmin)
+            tmin = tymin;
+    if (tymax < tmax)
+            tmax = tymax;
+    tzmin = (parameters[sign[2]].z - ray.origin.z) * inv_direction.z;
+    tzmax = (parameters[1-sign[2]].z - ray.origin.z) * inv_direction.z;
+    if ( (tmin > tzmax) || (tzmin > tmax) ) 
+            return false;
+    if (tzmin > tmin)
+            tmin = tzmin;
+    if (tzmax < tmax)
+            tmax = tzmax;
+    return ( (tmin < t1) && (tmax > t0) );
 }
 
 float randomFloat() {

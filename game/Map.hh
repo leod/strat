@@ -2,6 +2,7 @@
 #define STRAT_GAME_MAP_HH
 
 #include <entityx/entityx.h>
+#include <glm/glm.hpp>
 
 #include <cstring>
 #include <cassert>
@@ -23,6 +24,10 @@ struct Map {
     size_t getSizeX() const { return sizeX; }
     size_t getSizeY() const { return sizeY; }
 
+    glm::uvec2 getSize() const {
+        return glm::uvec2(sizeX, sizeY);
+    }
+
     size_t getMaxHeight() const { return maxHeight; }
 
     GridPoint &point(size_t x, size_t y) {
@@ -35,6 +40,14 @@ struct Map {
         assert(x < sizeX);
         assert(y < sizeY);
         return points[y * sizeX + x];
+    }
+
+    GridPoint &point(const glm::uvec2 &p) {
+        return point(p.x, p.y);
+    }
+
+    const GridPoint &point(const glm::uvec2 &p) const {
+        return point(p.x, p.y);
     }
 
     static Map generate(size_t sizeX, size_t sizeY,

@@ -27,7 +27,7 @@ struct AABB {
         : min(min), max(max) {
     }
 
-    bool intersectWithRay(const Ray &, float *distance = NULL) const;
+    bool intersectWithRay(const Ray &, float t0, float t1, float *distance = NULL) const;
 };
 
 struct PerlinNoise {

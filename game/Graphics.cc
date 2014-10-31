@@ -257,7 +257,7 @@ void setupGraphics(const Config &config, const View &view) {
     glLoadIdentity();
     gluLookAt(view.position.x, view.position.y, view.position.z,
               view.target.x, view.target.y, view.target.z,
-              0.0, 1.0, 0.0);
+              0.0, 0.0, 1.0);
 
     GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
     GLfloat mat_shininess[] = { 50.0 };
