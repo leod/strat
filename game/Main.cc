@@ -113,9 +113,9 @@ int main(int argc, char *argv[]) {
 
         std::stringstream ss;
         ss << "Strats (" << fps << " FPS, "
-                         << "x=" << static_cast<int>(view.targetX) << ", "
-                         << "y=" << static_cast<int>(view.targetY) << ", "
-                         << "z=" << static_cast<int>(view.height)
+                         << "x=" << static_cast<int>(view.target.x) << ", "
+                         << "y=" << static_cast<int>(view.target.y) << ", "
+                         << "z=" << static_cast<int>(view.target.z)
                          << ")";
         glfwSetWindowTitle(window, ss.str().c_str());
     } 

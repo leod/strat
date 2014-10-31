@@ -1,12 +1,20 @@
 #ifndef STRAT_GAME_INPUT_HH
 #define STRAT_GAME_INPUT_HH
 
-#include "Graphics.hh"
+#include "Math.hh"
 
 #include <GLFW/glfw3.h>
 
 struct Client;
+struct Sim;
 struct Map;
+
+struct View {
+    glm::vec3 position;
+    glm::vec3 target;
+
+    float distance;
+};
 
 struct Input {
     Input(GLFWwindow *, Client &);
@@ -19,6 +27,7 @@ private:
     GLFWwindow *window;
 
     Client &client;
+    Sim &sim;
     const Map &map;
 
     float scrollSpeed;

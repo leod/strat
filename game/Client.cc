@@ -145,7 +145,7 @@ void Client::handleMessage(const Message &message) {
             } else {
                 queuedOrders = message.server_tick.orders;
                 haveQueuedTick = true;
-                std::cout << "Queued tick at t=" << interp.getT() << std::endl;
+                //std::cout << "Queued tick at t=" << interp.getT() << std::endl;
             }
         }
         return;

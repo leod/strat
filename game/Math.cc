@@ -2,26 +2,10 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 
 bool AABB::intersectWithRay(const Ray &ray, float *distance) const {
-    glm::vec3 tMin((min - ray.origin) / ray.direction),
-              tMax((max - ray.origin) / ray.direction),
-              t1(glm::min(tMin, tMax)),
-              t2(glm::max(tMin, tMax));
-
-    float tNear(glm::max(glm::max(t1.x, t1.y), t1.z)),
-          tFar(glm::min(glm::min(t2.x, t2.y), t2.z));
-
-    if (tNear > tFar)
-        return false;
-    if (tNear < 0.0001f) {
-        if (distance != NULL)
-            *distance = tFar;
-
-        return true;
-    }
-
-    return false;
+    float tmin, tmax, tymin, tymin, tzmin, tzmax;
 }
 
 float randomFloat() {

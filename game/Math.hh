@@ -2,8 +2,6 @@
 #define STRAT_GAME_MATH_HH
 
 #include <glm/glm.hpp>
-#include <glm/vec3.hpp>
-#include <glm/geometric.hpp>
 
 #include <vector>
 
@@ -29,7 +27,7 @@ struct AABB {
         : min(min), max(max) {
     }
 
-    bool intersectWithRay(const Ray &, float *distance) const;
+    bool intersectWithRay(const Ray &, float *distance = NULL) const;
 };
 
 struct PerlinNoise {

@@ -9,17 +9,10 @@
 #include <entityx/entityx.h>
 #include <GL/glew.h>
 
+#include "Input.hh"
+
 struct Map;
 struct InterpState;
-
-struct View {
-    float targetX;
-    float targetY;
-
-    float distance;
-
-    float height;
-};
 
 struct Vertex {
     glm::vec3 position, color, normal;

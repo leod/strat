@@ -11,8 +11,6 @@
 
 #define checkError() printOglError(__FILE__, __LINE__)
 
-#define SCALE_Z 1.0f
-
 static glm::vec3 playerColors[4] = {
     glm::vec3(0.0, 1.0, 1.0),
     glm::vec3(1.0, 1.0, 0.0),
@@ -37,10 +35,10 @@ TerrainMesh::TerrainMesh(const Map &map)
 void TerrainMesh::init() {
     for (size_t x = 0; x < map.getSizeX() - 1; x++) {
         for (size_t y = 0; y < map.getSizeY() - 1; y++) {
-            glm::vec3 a(x, y, map.point(x, y).height * SCALE_Z);
-            glm::vec3 b(x+1, y, map.point(x+1, y).height * SCALE_Z);
-            glm::vec3 c(x+1, y+1, map.point(x+1, y+1).height * SCALE_Z);
-            glm::vec3 d(x, y+1, map.point(x, y+1).height * SCALE_Z);
+            glm::vec3 a(x, y, map.point(x, y).height );
+            glm::vec3 b(x+1, y, map.point(x+1, y).height );
+            glm::vec3 c(x+1, y+1, map.point(x+1, y+1).height );
+            glm::vec3 d(x, y+1, map.point(x, y+1).height );
 
             glm::vec3 ca(color(a.z));
             glm::vec3 cb(color(b.z));
@@ -196,7 +194,7 @@ void RenderBuildingSystem::render(entityx::EntityManager &entities) {
         glPushMatrix();
         glTranslatef(building->getPosition().x, building->getPosition().y,
                      map.point(building->getPosition().x,
-                               building->getPosition().y).height * SCALE_Z);
+                               building->getPosition().y).height );
         glScalef(building->getTypeInfo().size.x,
                  building->getTypeInfo().size.y,
                  building->getTypeInfo().size.z);
@@ -217,8 +215,8 @@ void RenderResourceTransferSystem::render(entityx::EntityManager &entities) {
     ResourceTransfer::Handle r;
     for (auto entity : entities.entities_with_components(r)) {
         glm::vec3 a(r->fromPosition), b(r->toPosition);
-        a.z = a.z * SCALE_Z;
-        b.z = b.z * SCALE_Z;
+        a.z = a.z ;
+        b.z = b.z ;
 
         glm::vec3 m((a.x + b.x) * 0.5,
                     (a.y + b.y) * 0.5,
@@ -257,8 +255,8 @@ void setupGraphics(const Config &config, const View &view) {
     
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    gluLookAt(view.targetX, view.targetY - 15.0f, view.height + view.distance,
-              view.targetX, view.targetY, view.height,
+    gluLookAt(view.position.x, view.position.y, view.position.z,
+              view.target.x, view.target.y, view.target.z,
               0.0, 1.0, 0.0);
 
     GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
@@ -286,9 +284,9 @@ void setupGraphics(const Config &config, const View &view) {
 }
 
 void drawCursor(const View &view) {
-    float tx = static_cast<float>(static_cast<int>(view.targetX));
-    float ty = static_cast<float>(static_cast<int>(view.targetY));
-    float tz = view.height * SCALE_Z + 0.001;
+    float tx = static_cast<float>(static_cast<int>(view.target.x));
+    float ty = static_cast<float>(static_cast<int>(view.target.y));
+    float tz = view.target.z + 0.001;
 
     float s = 0.5f;
 
