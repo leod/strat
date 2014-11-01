@@ -42,6 +42,6 @@ private:
 };
 
 void setupGraphics(const Config &, const View &);
-void drawCursor(const View &view);
+void drawCursor(const Map &map, const View &view);
 
 #endif

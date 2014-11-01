@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
     RenderBuildingSystem renderBuildingSystem(map);
     RenderResourceTransferSystem renderResourceTransferSystem(map, interp);
 
-    Input input(window, client);
+    Input input(window, client, terrainMesh);
     const View &view(input.getView());
 
     size_t frames = 0, fps = 0;
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
         renderBuildingSystem.render(sim.getEntities());
         renderResourceTransferSystem.render(sim.getEntities());
         
-        drawCursor(view);
+        drawCursor(map, view);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

@@ -4,6 +4,40 @@
 #include <iostream>
 #include <limits>
 
+bool intersectTriangleWithRay(const Ray &ray,
+                              const glm::vec3 &a,
+                              const glm::vec3 &b,
+                              const glm::vec3 &c,
+                              float &t,
+                              float &u,
+                              float &v) {
+    glm::vec3 edge1 = b - a;
+    glm::vec3 edge2 = c - a;
+    glm::vec3 pvec = glm::cross(ray.direction, edge2);
+    float det = glm::dot(edge1, pvec);
+
+    if (det > 0.0000001 && det < 0.0000001)
+        return false;
+
+    float invDet = 1.0 / det;
+
+    glm::vec3 tvec = ray.origin - a;
+
+    u = glm::dot(tvec, pvec) * invDet;
+    if (u < 0 || u > 1)
+        return false;
+        
+    glm::vec3 qvec = glm::cross(tvec, edge1);
+
+    v = glm::dot(ray.direction, qvec) * invDet;
+    if (v < 0 || u + v > 1)
+        return false;
+        
+    t = glm::dot(edge2, qvec) * invDet;
+
+    return t > 0.0000001;
+}
+
 bool AABB::intersectWithRay(const Ray &ray, float t0, float t1, float *distance) const {
     float tmin, tmax, tymin, tymax, tzmin, tzmax;
 
@@ -18,7 +52,7 @@ bool AABB::intersectWithRay(const Ray &ray, float t0, float t1, float *distance)
     tmax = (parameters[1-sign[0]].x - ray.origin.x) * inv_direction.x;
     tymin = (parameters[sign[1]].y - ray.origin.y) * inv_direction.y;
     tymax = (parameters[1-sign[1]].y - ray.origin.y) * inv_direction.y;
-    if ( (tmin > tymax) || (tymin > tmax) ) 
+    if ((tmin > tymax) || (tymin > tmax)) 
             return false;
     if (tymin > tmin)
             tmin = tymin;
@@ -26,13 +60,13 @@ bool AABB::intersectWithRay(const Ray &ray, float t0, float t1, float *distance)
             tmax = tymax;
     tzmin = (parameters[sign[2]].z - ray.origin.z) * inv_direction.z;
     tzmax = (parameters[1-sign[2]].z - ray.origin.z) * inv_direction.z;
-    if ( (tmin > tzmax) || (tzmin > tmax) ) 
+    if ((tmin > tzmax) || (tzmin > tmax)) 
             return false;
     if (tzmin > tmin)
             tmin = tzmin;
     if (tzmax < tmax)
             tmax = tzmax;
-    return ( (tmin < t1) && (tmax > t0) );
+    return ((tmin < t1) && (tmax > t0));
 }
 
 float randomFloat() {

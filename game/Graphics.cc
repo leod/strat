@@ -171,10 +171,10 @@ void setupGraphics(const Config &config, const View &view) {
     //
 }
 
-void drawCursor(const View &view) {
-    float tx = static_cast<float>(static_cast<int>(view.target.x));
-    float ty = static_cast<float>(static_cast<int>(view.target.y));
-    float tz = view.target.z + 0.001;
+void drawCursor(const Map &map, const View &view) {
+    float tx = view.cursor.x;
+    float ty = view.cursor.y;
+    float tz = map.point(view.cursor).height + 0.001;
 
     float s = 0.5f;
 

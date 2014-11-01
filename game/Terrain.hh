@@ -13,6 +13,8 @@ struct TerrainMesh {
 
     void draw();
 
+    bool intersectWithRay(const Ray &ray, Map::Pos &point, float &t) const;
+
 private:
     void init();
 

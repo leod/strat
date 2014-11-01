@@ -20,6 +20,12 @@ struct Ray {
     }
 };
 
+bool intersectTriangleWithRay(const Ray &ray,
+                              const glm::vec3 &a,
+                              const glm::vec3 &b,
+                              const glm::vec3 &c,
+                              float &t, float &u, float &v);
+
 struct AABB {
     glm::vec3 min, max;
 

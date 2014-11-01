@@ -1,6 +1,12 @@
 #include "Terrain.hh"
+#include "Math.hh"
 
+#include <limits>
+#include <iostream>
+#include <cmath>
 #include <GL/glu.h>
+
+#define POINT(x,y) glm::vec3(x, y, map.point(x, y).height)
 
 struct Vertex {
     glm::vec3 position, color, normal;
@@ -21,6 +27,8 @@ struct TerrainPatch {
 
     void init();
     void draw();
+
+    bool intersectWithRay(const Ray &ray, Map::Pos &point, float &t) const;
 
 private:
     const Map &map;
@@ -43,7 +51,6 @@ TerrainPatch::TerrainPatch(const Map &map,
 }
 
 void TerrainPatch::init() {
-#define POINT(x,y) glm::vec3(x, y, map.point(x, y).height)
     // Generate one vertex per map point
     /*for (size_t x = position.x;
          x < position.x + size.x;
@@ -104,10 +111,8 @@ void TerrainPatch::init() {
 
     for (size_t x = 0; x < map.getSizeX() - 1; x++) {
         for (size_t y = 0; y < map.getSizeY() - 1; y++) {
-            glm::vec3 a(POINT(x,y));
-            glm::vec3 b(POINT(x+1,y));
-            glm::vec3 c(POINT(x,y+1));
-            glm::vec3 d(POINT(x+1,y+1));
+            glm::vec3 a(POINT(x,y)), b(POINT(x+1,y)),
+                      c(POINT(x,y+1)), d(POINT(x+1,y+1));
 
             glm::vec3 n1(glm::normalize(glm::cross(a - d, b - d)));
             glm::vec3 n2(glm::normalize(glm::cross(c - d, a - d)));
@@ -134,8 +139,6 @@ void TerrainPatch::init() {
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(),
         &vertices[0], GL_STATIC_DRAW);
-
-#undef POINT
 }
 
 void TerrainPatch::draw() {
@@ -163,6 +166,37 @@ void TerrainPatch::draw() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+bool TerrainPatch::intersectWithRay(const Ray &ray, Map::Pos &point,
+                                    float &tMin) const {
+#define ROUND(x) floor((x) + 0.5f)
+    tMin = std::numeric_limits<float>::infinity();
+
+    for (size_t x = 0; x < map.getSizeX() - 1; x++) {
+        for (size_t y = 0; y < map.getSizeY() - 1; y++) {
+            glm::vec3 a(POINT(x,y)), b(POINT(x+1,y)),
+                      c(POINT(x,y+1)), d(POINT(x+1,y+1));
+            float t, u, v;
+            if (intersectTriangleWithRay(ray, d, b, a, t, u, v) && t < tMin) {
+                std::cout << "a";
+                tMin = t;
+                if (ROUND(u) == 0 && ROUND(v) == 0) point = Map::Pos(x+1,y+1);
+                else if (ROUND(u) == 1 && ROUND(v) == 0) point = Map::Pos(x+1,y);
+                else point = Map::Pos(x,y);
+            }
+            if (intersectTriangleWithRay(ray, a, c, d, t, u, v) && t < tMin) {
+                std::cout << "b";
+                tMin = t;
+                if (ROUND(u) == 0 && ROUND(v) == 0) point = Map::Pos(x,y);
+                else if (ROUND(u) == 1 && ROUND(v) == 0) point = Map::Pos(x,y+1);
+                else point = Map::Pos(x+1,y+1);
+            }
+        }
+    }
+
+    return tMin != std::numeric_limits<float>::infinity();
+#undef ROUND
+}
+
 glm::vec3 TerrainPatch::color(size_t height) const {
     float t = (float)height / map.getMaxHeight(); 
     float b = 0.3 + t / 3;
@@ -174,13 +208,29 @@ TerrainMesh::TerrainMesh(const Map &map)
     init();
 }
 
-void TerrainMesh::init() {
-    patches.push_back(
-        new TerrainPatch(map, Map::Pos(0, 0), map.getSize()));
-}
-
 void TerrainMesh::draw() {
     for (auto patch : patches)
         patch->draw();
 }
 
+bool TerrainMesh::intersectWithRay(const Ray &ray, Map::Pos &point, float &tMin) const {
+    tMin = std::numeric_limits<float>::infinity();
+
+    for (auto patch : patches) {
+        Map::Pos p;
+        float t;
+        if (patch->intersectWithRay(ray, p, t) && t < tMin) {
+            tMin = t;
+            point = p;
+        }
+    }
+
+    return tMin != std::numeric_limits<float>::infinity();
+}
+
+void TerrainMesh::init() {
+    patches.push_back(
+        new TerrainPatch(map, Map::Pos(0, 0), map.getSize()));
+}
+
+#undef POINT

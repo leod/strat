@@ -28,9 +28,9 @@ static Ray calculateViewRay(double mx, double my, const View &view) {
     return Ray(view.position, glm::vec3(glm::normalize(farP - nearP)));
 }
 
-Input::Input(GLFWwindow *window, Client &client)
-    : window(window), client(client),
-      sim(client.getSim()), map(sim.getState().getMap()),
+Input::Input(GLFWwindow *window, Client &client, const TerrainMesh &terrain)
+    : window(window), client(client), sim(client.getSim()),
+      terrain(terrain), map(sim.getState().getMap()),
       scrollSpeed(3.0f), wasPressB(false), wasPressN(false) {
     view.target.x = 64;
     view.target.y = 64;
@@ -47,17 +47,6 @@ void Input::update(double dt) {
     glfwGetCursorPos(window, &mx, &my);
     Ray ray = calculateViewRay(mx, my, view);
 
-    //std::cout << ray.direction.x << "," << ray.direction.y << "," << ray.direction.z << std::endl;
-
-    glBegin(GL_LINES);
-    glColor3f(1.0, 0.0, 0.0);
-    glVertex3f(view.position.x, view.position.y, view.position.z);
-    glVertex3f(ray.direction.x, ray.direction.y, ray.direction.z);
-
-    /*glVertex3f(view.target.x, view.target.y, view.target.z);
-    glVertex3f(ray.direction.x, ray.direction.y, ray.direction.z);*/
-    glEnd();
-
     GameObject::Handle gameObject;
     Building::Handle building;
     for (auto entity : sim.getEntities().entities_with_components(gameObject, building)) {
@@ -67,6 +56,12 @@ void Input::update(double dt) {
         if (aabb.intersectWithRay(ray, 1.0f, 5000.0f)) {
             std::cout << "HIT " << gameObject->getId() << std::endl;
         }
+    }
+
+    float mapT;
+    Map::Pos cursor;
+    if (terrain.intersectWithRay(ray, cursor, mapT)) {
+        view.cursor = cursor;
     }
 
     glm::vec2 mapDirection(view.target - view.position);

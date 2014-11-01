@@ -2,6 +2,7 @@
 #define STRAT_GAME_INPUT_HH
 
 #include "Math.hh"
+#include "Terrain.hh"
 
 #include <GLFW/glfw3.h>
 
@@ -14,12 +15,13 @@ struct View {
     glm::vec3 target;
 
     float angle;
-
     float distance;
+
+    Map::Pos cursor;
 };
 
 struct Input {
-    Input(GLFWwindow *, Client &);
+    Input(GLFWwindow *, Client &, const TerrainMesh &);
 
     const View &getView() const;
 
@@ -30,6 +32,7 @@ private:
 
     Client &client;
     Sim &sim;
+    const TerrainMesh &terrain;
     const Map &map;
 
     float scrollSpeed;
