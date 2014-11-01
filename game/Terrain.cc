@@ -34,83 +34,32 @@ private:
     const Map &map;
     Map::Pos position, size;
 
+    AABB aabb;
+
     glm::vec3 color(size_t height) const; 
 
     std::vector<Vertex> vertices;
-    std::vector<GLuint> indices;
-
     GLuint vertexBuffer;
-    GLuint indexBuffer;
 };
 
 TerrainPatch::TerrainPatch(const Map &map,
                            const Map::Pos &position,
                            const Map::Pos &size)
-    : map(map), position(position), size(size) {
+    : map(map), position(position), size(size),
+      aabb(glm::vec3(position, 0), glm::vec3(position + size, 0)) {
     init();
 }
 
 void TerrainPatch::init() {
-    // Generate one vertex per map point
-    /*for (size_t x = position.x;
-         x < position.x + size.x;
-         x++) {
-        for (size_t y = position.y;
-             y < position.y + size.y;
-             y++) {
-            glm::vec3 n;
-            if (x > 0 && y > 0) {
-                n += glm::cross(POINT(x-1,y) - POINT(x,y),
-                                POINT(x-1,y-1) - POINT(x,y));
-                n += glm::cross(POINT(x-1,y-1) - POINT(x,y),
-                                POINT(x,y-1) - POINT(x,y));
-            }
-            if (x < map.getSizeX() - 1 && y > 0) {
-                n += glm::cross(POINT(x,y-1) - POINT(x,y),
-                                POINT(x+1,y) - POINT(x,y));
-                n += glm::cross(POINT(x,y-1) - POINT(x+1,y),
-                                POINT(x+1,y-1) - POINT(x+1,y));
-            }
-            if (x < map.getSizeX() - 1 && y < map.getSizeY() - 1) {
-                n += glm::cross(POINT(x+1,y) - POINT(x,y),
-                                POINT(x+1,y+1) - POINT(x,y));
-                n += glm::cross(POINT(x+1,y+1) - POINT(x,y),
-                                POINT(x+1,y) - POINT(x,y));
-            }
-            if (x > 0 && y < map.getSizeY() - 1) {
-                n += glm::cross(POINT(x,y+1) - POINT(x,y),
-                                POINT(x-1,y) - POINT(x,y));
-                n += glm::cross(POINT(x,y+1) - POINT(x-1,y),
-                                POINT(x-1,y+1) - POINT(x-1,y));
-            }
-            n = glm::normalize(n);
-
-            vertices.push_back(Vertex(POINT(x,y), color(POINT(x,y).z), n));
+    for (size_t x = position.x; x < position.x + size.x; x++) {
+        for (size_t y = position.y; y < position.y + size.y; y++) {
+            if (map.point(x,y).height > aabb.max.z)
+                aabb.max.z = map.point(x,y).height;
         }
     }
 
-    // Generate one quad for almost each map point
-    for (size_t x = position.x;
-         x < position.x + size.x - 1;
-         x++) {
-        for (size_t y = position.y;
-             y < position.y + size.y - 1;
-             y++) {
-            indices.push_back(map.getSizeY() * x + y);
-            indices.push_back(map.getSizeY() * (x+1) + y);
-            indices.push_back(map.getSizeY() * (x+1) + y+1);
-            indices.push_back(map.getSizeY() * x + y+1);
-        }
-    }
-
-    glGenBuffers(1, &indexBuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-        sizeof(GLuint) * indices.size(), &indices[0],
-        GL_STATIC_DRAW);*/
-
-    for (size_t x = 0; x < map.getSizeX() - 1; x++) {
-        for (size_t y = 0; y < map.getSizeY() - 1; y++) {
+    for (size_t x = position.x; x < position.x + size.x - 1; x++) {
+        for (size_t y = position.y; y < position.y + size.y - 1; y++) {
             glm::vec3 a(POINT(x,y)), b(POINT(x+1,y)),
                       c(POINT(x,y+1)), d(POINT(x+1,y+1));
 
@@ -143,7 +92,6 @@ void TerrainPatch::init() {
 
 void TerrainPatch::draw() {
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer); 
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
 
     glEnableClientState(GL_VERTEX_ARRAY); // oldschool yo
     glEnableClientState(GL_COLOR_ARRAY);
@@ -156,8 +104,6 @@ void TerrainPatch::draw() {
     glNormalPointer(GL_FLOAT, sizeof(Vertex),
         reinterpret_cast<const void *>(offsetof(Vertex, normal)));
 
-    /*glDrawElements(GL_QUADS, indices.size(), GL_UNSIGNED_INT,
-                   NULL);*/
     glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 
     glDisableClientState(GL_VERTEX_ARRAY);
@@ -168,23 +114,24 @@ void TerrainPatch::draw() {
 
 bool TerrainPatch::intersectWithRay(const Ray &ray, Map::Pos &point,
                                     float &tMin) const {
+    /*if (!aabb.intersectWithRay(ray, 0.1f, 5000.0f))
+        return false;*/
+
 #define ROUND(x) floor((x) + 0.5f)
     tMin = std::numeric_limits<float>::infinity();
 
-    for (size_t x = 0; x < map.getSizeX() - 1; x++) {
-        for (size_t y = 0; y < map.getSizeY() - 1; y++) {
+    for (size_t x = position.x; x < position.x + size.x - 1; x++) {
+        for (size_t y = position.y; y < position.y + size.y - 1; y++) {
             glm::vec3 a(POINT(x,y)), b(POINT(x+1,y)),
                       c(POINT(x,y+1)), d(POINT(x+1,y+1));
             float t, u, v;
             if (intersectTriangleWithRay(ray, d, b, a, t, u, v) && t < tMin) {
-                std::cout << "a";
                 tMin = t;
                 if (ROUND(u) == 0 && ROUND(v) == 0) point = Map::Pos(x+1,y+1);
                 else if (ROUND(u) == 1 && ROUND(v) == 0) point = Map::Pos(x+1,y);
                 else point = Map::Pos(x,y);
             }
             if (intersectTriangleWithRay(ray, a, c, d, t, u, v) && t < tMin) {
-                std::cout << "b";
                 tMin = t;
                 if (ROUND(u) == 0 && ROUND(v) == 0) point = Map::Pos(x,y);
                 else if (ROUND(u) == 1 && ROUND(v) == 0) point = Map::Pos(x,y+1);
@@ -203,9 +150,18 @@ glm::vec3 TerrainPatch::color(size_t height) const {
     return glm::vec3(b, b, b);
 }
 
-TerrainMesh::TerrainMesh(const Map &map)
+TerrainMesh::TerrainMesh(const Map &map, const Map::Pos &patchSize)
     : map(map) {
-    init();
+    assert(map.getSizeX() % patchSize.x == 0);
+    assert(map.getSizeY() % patchSize.y == 0);
+
+    for (size_t x = 0; x < map.getSizeX() / patchSize.x - 1; x++) {
+        for (size_t y = 0; y < map.getSizeY() / patchSize.y - 1; y++) {
+            std::cout << x*patchSize.x << "," << y*patchSize.y << std::endl;
+            patches.push_back(new TerrainPatch(map, Map::Pos(x*patchSize.x,y*patchSize.y),
+                                               patchSize+glm::uvec2(1,1)));
+        }
+    }
 }
 
 void TerrainMesh::draw() {

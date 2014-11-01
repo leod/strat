@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
     const Map &map(simState.getMap());
     const InterpState &interp(client.getInterp());
 
-    TerrainMesh terrainMesh(map);
+    TerrainMesh terrainMesh(map, Map::Pos(16, 16));
     RenderBuildingSystem renderBuildingSystem(map);
     RenderResourceTransferSystem renderResourceTransferSystem(map, interp);
 

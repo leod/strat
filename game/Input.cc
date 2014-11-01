@@ -31,7 +31,7 @@ static Ray calculateViewRay(double mx, double my, const View &view) {
 Input::Input(GLFWwindow *window, Client &client, const TerrainMesh &terrain)
     : window(window), client(client), sim(client.getSim()),
       terrain(terrain), map(sim.getState().getMap()),
-      scrollSpeed(3.0f), wasPressB(false), wasPressN(false) {
+      scrollSpeed(5.0f), wasPressB(false), wasPressN(false) {
     view.target.x = 64;
     view.target.y = 64;
     view.distance = 40.0f;
@@ -108,8 +108,8 @@ void Input::update(double dt) {
             wasPressB = true;
 
             Order order(Order::BUILD);
-            order.build.x = static_cast<uint16_t>(view.target.x);
-            order.build.y = static_cast<uint16_t>(view.target.y);
+            order.build.x = static_cast<uint16_t>(view.cursor.x);
+            order.build.y = static_cast<uint16_t>(view.cursor.y);
             order.build.type = BUILDING_MINER;
 
             client.order(order);
@@ -120,8 +120,8 @@ void Input::update(double dt) {
             wasPressN = true;
 
             Order order(Order::BUILD);
-            order.build.x = static_cast<uint16_t>(view.target.x);
-            order.build.y = static_cast<uint16_t>(view.target.y);
+            order.build.x = static_cast<uint16_t>(view.cursor.x);
+            order.build.y = static_cast<uint16_t>(view.cursor.y);
             order.build.type = BUILDING_STORE;
 
             client.order(order);

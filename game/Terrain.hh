@@ -9,7 +9,7 @@
 struct TerrainPatch;
 
 struct TerrainMesh {
-    TerrainMesh(const Map &);
+    TerrainMesh(const Map &, const Map::Pos &patchSize);
 
     void draw();
 
@@ -21,6 +21,7 @@ private:
     glm::vec3 color(size_t height);
 
     const Map &map;
+
     std::vector<TerrainPatch *> patches;
 };
 

@@ -122,8 +122,8 @@ int main() {
     }
 
     settings.randomSeed = static_cast<uint32_t>(time(NULL));
-    settings.mapW = 220;
-    settings.mapH = 220;
+    settings.mapW = 256;
+    settings.mapH = 256;
     settings.heightLimit = 10;
     settings.tickLengthMs = 50;
 
