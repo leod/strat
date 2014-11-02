@@ -168,6 +168,7 @@ void setupGraphics(const Config &config, const View &view) {
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
+    
 
     //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
     //

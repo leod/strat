@@ -124,7 +124,7 @@ int main() {
     settings.randomSeed = static_cast<uint32_t>(time(NULL));
     settings.mapW = 256;
     settings.mapH = 256;
-    settings.heightLimit = 10;
+    settings.heightLimit = 15;
     settings.tickLengthMs = 50;
 
     size_t numWaitPlayers = 1;

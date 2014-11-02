@@ -204,32 +204,42 @@ void SimState::raiseWaterLevel() {
 
 void SimState::waterTick() {
     time += getTickLengthS();
-    if (time.toInt() / 10 >= waterLevel) {
+    if (time.toInt() / 5 >= waterLevel) {
         raiseWaterLevel();
     }
 
-    Fixed flowPerS(Fixed(1));
+    Fixed flowPerS(Fixed(4) / Fixed(2));
 
+    // Calculate water flow from grid point to grid point
     for (size_t x = 0; x < map.getSizeX(); x++) {
         for (size_t y = 0; y < map.getSizeY(); y++) {
             GridPoint &p(map.point(x, y));
 
             if (p.height < waterLevel) {
                 if (p.water < Fixed(1)) {
-                    Fixed sum;
+                    // This point has only been flooded since the new water level
 
+                    Fixed sum;
                     map.forNeighbors(Map::Pos(x, y), [&] (const Map::Pos &n) {
                         Fixed value(map.point(n).water);
+
+                        if (value < p.water) return;
                         if (value > Fixed(1)) value = Fixed(1);
+
+                        //value *= Fixed(p.water) - value;
 
                         sum += value * flowPerS * getTickLengthS();
                     });
 
                     p.water += sum;
                 } else if (p.water < Fixed(waterLevel - p.height)) {
-                    p.water += flowPerS;
+                    // This point has been flooded for a longer time,
+                    // but hasn't risen to the waterLevel yet
+
+                    p.water += Fixed(1) / Fixed(4 * (waterLevel - p.height));
                 }
 
+                // Don't allow flooding above the global water level
                 if (p.water > Fixed(waterLevel - p.height))
                     p.water = Fixed(waterLevel - p.height);
             }

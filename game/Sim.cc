@@ -5,6 +5,7 @@
 Sim::Sim(const GameSettings &settings)
     : state(settings) {
     state.raiseWaterLevel();
+    state.raiseWaterLevel();
 }
 
 void Sim::runTick(const std::vector<Order> &orders) {

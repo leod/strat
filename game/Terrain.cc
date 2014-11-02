@@ -58,8 +58,8 @@ void TerrainPatch::init() {
         }
     }
 
-    for (size_t x = position.x; x < position.x + size.x - 1; x++) {
-        for (size_t y = position.y; y < position.y + size.y - 1; y++) {
+    for (size_t x = position.x; x < position.x + size.x; x++) {
+        for (size_t y = position.y; y < position.y + size.y; y++) {
             glm::vec3 a(POINT(x,y)), b(POINT(x+1,y)),
                       c(POINT(x,y+1)), d(POINT(x+1,y+1));
 
@@ -112,9 +112,10 @@ void TerrainPatch::draw() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // Water test
+    glShadeModel(GL_FLAT);
     glBegin(GL_TRIANGLES);
-    for (size_t x = position.x; x < position.x + size.x - 1; x++) {
-        for (size_t y = position.y; y < position.y + size.y - 1; y++) {
+    for (size_t x = position.x; x < position.x + size.x; x++) {
+        for (size_t y = position.y; y < position.y + size.y; y++) {
             glm::vec3 a(POINT(x,y)), b(POINT(x+1,y)),
                       c(POINT(x,y+1)), d(POINT(x+1,y+1));
             float dz = 0.01;
@@ -123,28 +124,52 @@ void TerrainPatch::draw() {
             c.z += dz + map.point(x,y+1).water;
             d.z += dz + map.point(x+1,y+1).water;
 
-            if (map.point(x+1,y+1).water > 0 || map.point(x+1,y).water > 0 ||
-                map.point(x,y).water > 0) {
+            float ca = map.point(x,y).water > 1 ? 1 : map.point(x,y).water;
+            float cb = map.point(x+1,y).water > 1 ? 1 : map.point(x+1,y).water;
+            float cc = map.point(x,y+1).water > 1 ? 1 : map.point(x,y+1).water;
+            float cd = map.point(x+1,y+1).water > 1 ? 1 : map.point(x+1,y+1).water;
 
-                glColor4f(0.0f, 1.0f, 0.0f, 0.8f);
+#define ALPHA(x) (0.40f + sin(x)/2)
 
+            /*glNormal3f(0,0,1);
+            glColor4f(0.0f, 0.2f, 0.5f, ALPHA(cd));
+            glVertex3f(POINT(x,y).x, POINT(x,y).y, POINT(x,y).z);
+            glVertex3f(POINT(x,y).x, POINT(x,y).y, a.z);
+            continue;*/
+
+            float minw = 0.1;
+
+            if (map.point(x+1,y+1).water > minw || map.point(x+1,y).water > minw ||
+                map.point(x,y+1).water > minw || map.point(x,y).water > minw) {
+                glm::vec3 n1(glm::normalize(glm::cross(a - d, b - d)));
+                glNormal3f(n1.x, n1.y, n1.z);
+
+                glColor4f(0.0f, 0.2f, 0.5f, ALPHA((cd + cb + ca) / 3));
                 glVertex3f(d.x, d.y, d.z);
+                //glColor4f(0.0f, 0.2f, 0.5f, ALPHA(cb));
                 glVertex3f(b.x, b.y, b.z);
+                //glColor4f(0.0f, 0.2f, 0.5f, ALPHA(ca));
                 glVertex3f(a.x, a.y, a.z);
+
+                glm::vec3 n2(glm::normalize(glm::cross(c - d, a - d)));
+                glNormal3f(n2.x, n2.y, n2.z);
+
+                glColor4f(0.0f, 0.2f, 0.5f, ALPHA((ca + cc + cd) / 3));
+                glVertex3f(a.x, a.y, a.z);
+                //glColor4f(0.0f, 0.2f, 0.5f, ALPHA(cc));
+                glVertex3f(c.x, c.y, c.z);
+                //glColor4f(0.0f, 0.2f, 0.5f, ALPHA(cd));
+                glVertex3f(d.x, d.y, d.z);
             }
             
             if (map.point(x,y).water > 0 || map.point(x,y+1).water > 0 ||
                 map.point(x+1,y+1).water > 0) {
-                glColor4f(0.0f, 1.0f, 0.0f, 0.8f);
-
-                glVertex3f(a.x, a.y, a.z);
-                glVertex3f(c.x, c.y, c.z);
-                glVertex3f(d.x, d.y, d.z);
             }
 
         }
     }
     glEnd();
+    glShadeModel(GL_SMOOTH);
 }
 
 bool TerrainPatch::intersectWithRay(const Ray &ray, Map::Pos &point,
@@ -155,8 +180,8 @@ bool TerrainPatch::intersectWithRay(const Ray &ray, Map::Pos &point,
 #define ROUND(x) floor((x) + 0.5f)
     tMin = std::numeric_limits<float>::infinity();
 
-    for (size_t x = position.x; x < position.x + size.x - 1; x++) {
-        for (size_t y = position.y; y < position.y + size.y - 1; y++) {
+    for (size_t x = position.x; x < position.x + size.x; x++) {
+        for (size_t y = position.y; y < position.y + size.y; y++) {
             glm::vec3 a(POINT(x,y)), b(POINT(x+1,y)),
                       c(POINT(x,y+1)), d(POINT(x+1,y+1));
             float t, u, v;
@@ -190,13 +215,15 @@ TerrainMesh::TerrainMesh(const Map &map, const Map::Pos &patchSize)
     assert(map.getSizeX() % patchSize.x == 0);
     assert(map.getSizeY() % patchSize.y == 0);
 
-    for (size_t x = 0; x < map.getSizeX() / patchSize.x - 1; x++) {
+    /*for (size_t x = 0; x < map.getSizeX() / patchSize.x - 1; x++) {
         for (size_t y = 0; y < map.getSizeY() / patchSize.y - 1; y++) {
             std::cout << x*patchSize.x << "," << y*patchSize.y << std::endl;
             patches.push_back(new TerrainPatch(map, Map::Pos(x*patchSize.x,y*patchSize.y),
-                                               patchSize+glm::uvec2(1,1)));
+                                               patchSize));
         }
-    }
+    }*/
+
+    patches.push_back(new TerrainPatch(map, Map::Pos(0, 0), map.getSize()-Map::Pos(1,1)));
 }
 
 void TerrainMesh::draw() {
