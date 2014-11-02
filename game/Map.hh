@@ -13,14 +13,21 @@ struct GridPoint {
     size_t height;
 
     // Progress of heightening
-    Fixed heightProgress; // 0 <= heightProgress <= 1
+    bool isGrowing;
+    Fixed growthProgress; // 0 <= heightProgress <= 1
 
     entityx::Entity entity;
 
     Fixed water;
 
     GridPoint()
-        : height(0), heightProgress(0), entity(), water(0) {
+        : height(0), isGrowing(false), growthProgress(0), entity(), water(0) {
+    }
+
+    bool usable() const {
+        return !isGrowing &&
+               !entity &&
+               water == Fixed(0);
     }
 };
 
@@ -85,16 +92,21 @@ struct Map {
     void forRectangle(const Pos &p, const Pos &s, F f) {
         assert(isPoint(p));
         assert(isPoint(p + s));
-
-        for (size_t x = p.x; x <= p.x + s.x; x++) {
-            for (size_t y = p.y; y <= p.y + s.y; y++) {
+        for (size_t x = p.x; x <= p.x + s.x; x++)
+            for (size_t y = p.y; y <= p.y + s.y; y++)
                 f(point(x, y));
-            }
-        }
+    }
+    template<typename F>
+    void forRectangle(const Pos &p, const Pos &s, F f) const {
+        assert(isPoint(p));
+        assert(isPoint(p + s));
+        for (size_t x = p.x; x <= p.x + s.x; x++)
+            for (size_t y = p.y; y <= p.y + s.y; y++)
+                f(point(x, y));
     }
 
     void raise(const Pos &p, const Pos &s);
-    void tick();
+    void tick(Fixed tickLengthS);
 
 private:
     size_t sizeX;

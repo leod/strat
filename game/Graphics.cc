@@ -142,6 +142,8 @@ void RenderResourceTransferSystem::render(entityx::EntityManager &entities) {
 }
 
 void setupGraphics(const Config &config, const View &view) {
+    checkError();
+    
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(60.0f,
@@ -190,6 +192,8 @@ void setupGraphics(const Config &config, const View &view) {
 }
 
 void drawCursor(const Map &map, const View &view) {
+    glDisable(GL_CULL_FACE);
+
     float dz = 0.01;
     float tx = view.cursor.x;
     float ty = view.cursor.y;
@@ -237,4 +241,6 @@ void drawCursor(const Map &map, const View &view) {
         glEnd();
 
     }
+
+    glEnable(GL_CULL_FACE);
 }

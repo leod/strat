@@ -114,7 +114,7 @@ void Input::update(double dt) {
         glm::vec2 scroll(-glm::cross(glm::vec3(0, 0, 1), glm::vec3(mapDirection, 0)) * moveDelta);
         tryScroll(scroll);
     }
-    if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS && view.distance > 0.0f) {
+    if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS && view.distance > 3.0f) {
         view.distance -= dt * 35.0f;
         if (view.distance < 3.0f)
             view.distance = 3.0f;

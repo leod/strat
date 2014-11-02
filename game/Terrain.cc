@@ -6,7 +6,7 @@
 #include <cmath>
 #include <GL/glu.h>
 
-#define POINT(x,y) glm::vec3(x, y, map.point(x, y).height)
+#define POINT(x,y) glm::vec3(x, y, map.point(x, y).height + map.point(x,y).growthProgress)
 
 struct Vertex {
     glm::vec3 position, color, normal;
@@ -28,7 +28,6 @@ struct TerrainPatch {
     void init();
     void update();
     void draw();
-
 
     bool intersectWithRay(const Ray &ray, Map::Pos &point, float &t) const;
 
@@ -104,6 +103,7 @@ void TerrainPatch::update() {
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(),
         &vertices[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void TerrainPatch::draw() {

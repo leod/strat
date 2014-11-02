@@ -43,29 +43,27 @@ bool SimState::canPlaceBuilding(BuildingType type, const glm::uvec2 &p) const {
     if (!map.isPoint(p)) return false;
 
     const BuildingTypeInfo &typeInfo(buildingTypeInfo[type]);
-    bool valid = true;
 
     size_t height = map.point(p).height;
 
     for (size_t x = p.x > 0 ? p.x - 1 : 0; x < p.x + typeInfo.size.x + 1; x++) {
         if (x >= map.getSizeX()) {
-            valid = false;
-            break;
+            return false;
         }
         for (size_t y = p.y > 0 ? p.y - 1 : 0; y < p.y + typeInfo.size.y + 1; y++) {
             if (y >= map.getSizeY()) {
-                valid = false;
-                break;
+                return false;
             }
-            if (map.point(x, y).entity
-                || map.point(x, y).height != height) {
-                valid = false;
-                break;
+            if (map.point(x, y).height != height) { // Map is not even on our rect
+                return false;
+            }
+            if (!map.point(x, y).usable()) { // Grid point is being used right now
+                return false;
             }
         }
     }
 
-    return valid;
+    return true;
 }
 
 entityx::Entity SimState::findClosestBuilding(BuildingType type,
@@ -105,10 +103,20 @@ bool SimState::isOrderValid(const Order &order) const {
     case Order::BUILD:
         return canPlaceBuilding(order.build.type,
                                 glm::uvec2(order.build.x, order.build.y));
-    case Order::RAISE_MAP:
-        return map.isPoint(order.raiseMap.x, order.raiseMap.y)
-               && map.isPoint(order.raiseMap.x + order.raiseMap.w,
-                              order.raiseMap.y + order.raiseMap.h);
+    case Order::RAISE_MAP: {
+        if(!map.isPoint(order.raiseMap.x, order.raiseMap.y)
+           || !map.isPoint(order.raiseMap.x + order.raiseMap.w,
+                           order.raiseMap.y + order.raiseMap.h))
+            return false;
+
+        bool valid = true;
+        map.forRectangle(Map::Pos(order.raiseMap.x, order.raiseMap.y),
+                         Map::Pos(order.raiseMap.w, order.raiseMap.h),
+                         [&] (const GridPoint &p) {
+                             valid = valid && p.usable();
+                         });
+        return valid;
+    }
     default:
         return false;
     }

@@ -53,10 +53,27 @@ Map Map::generate(size_t sizeX, size_t sizeY,
 
 void Map::raise(const Pos &p, const Pos &s) {
     forRectangle(p, s, [&] (GridPoint &p) {
-        p.height++; 
+        //p.height++; 
+        p.isGrowing = true;
     });
 }
 
-void Map::tick() {
+void Map::tick(Fixed tickLengthS) {
+    Fixed growthPerS = Fixed(1);
 
+    for (size_t x = 0; x < sizeX; x++) {
+        for (size_t y = 0; y < sizeY; y++) {
+            GridPoint &p(point(x, y));
+
+            if (p.isGrowing) {
+                p.growthProgress += growthPerS * tickLengthS;
+
+                if (p.growthProgress >= Fixed(1)) {
+                    p.height++;
+                    p.isGrowing = false;
+                    p.growthProgress = 0;
+                }
+            }
+        }
+    }
 }
