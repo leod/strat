@@ -102,10 +102,13 @@ entityx::Entity SimState::findClosestBuilding(BuildingType type,
 
 bool SimState::isOrderValid(const Order &order) const {
     switch (order.type) {
-    case Order::BUILD: {
+    case Order::BUILD:
         return canPlaceBuilding(order.build.type,
                                 glm::uvec2(order.build.x, order.build.y));
-    }
+    case Order::RAISE_MAP:
+        return map.isPoint(order.raiseMap.x, order.raiseMap.y)
+               && map.isPoint(order.raiseMap.x + order.raiseMap.w,
+                              order.raiseMap.y + order.raiseMap.h);
     default:
         return false;
     }
@@ -138,6 +141,16 @@ void SimState::runOrder(const Order &order) {
             }
         }
 
+        return;
+    }
+
+    case Order::RAISE_MAP: {
+        std::cout << "Got raise map order at x=" << order.raiseMap.x
+                  << ", y=" << order.raiseMap.y
+                  << ", w=" << order.raiseMap.w
+                  << ", h=" << order.raiseMap.h << std::endl;
+        map.raise(Map::Pos(order.raiseMap.x, order.raiseMap.y),
+                  Map::Pos(order.raiseMap.w, order.raiseMap.h));
         return;
     }
 
@@ -223,8 +236,8 @@ void SimState::waterTick() {
                     // This point has only been flooded since the new water level
 
                     Fixed sum;
-                    map.forNeighbors(Map::Pos(x, y), [&] (const Map::Pos &n) {
-                        Fixed value(map.point(n).water);
+                    map.forNeighbors(Map::Pos(x, y), [&] (const GridPoint &p) {
+                        Fixed value(p.water);
 
                         if (value < p.water) return;
                         if (value > Fixed(1)) value = Fixed(1);

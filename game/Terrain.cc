@@ -26,7 +26,9 @@ struct TerrainPatch {
                  const Map::Pos &size); 
 
     void init();
+    void update();
     void draw();
+
 
     bool intersectWithRay(const Ray &ray, Map::Pos &point, float &t) const;
 
@@ -56,12 +58,20 @@ TerrainMesh::~TerrainMesh() {
 }
 
 void TerrainPatch::init() {
+    glGenBuffers(1, &vertexBuffer);
+    update();
+}
+
+void TerrainPatch::update() {
+    aabb.max.z = 0;
     for (size_t x = position.x; x < position.x + size.x; x++) {
         for (size_t y = position.y; y < position.y + size.y; y++) {
             if (map.point(x,y).height > aabb.max.z)
                 aabb.max.z = map.point(x,y).height;
         }
     }
+
+    vertices.clear();
 
     for (size_t x = position.x; x < position.x + size.x; x++) {
         for (size_t y = position.y; y < position.y + size.y; y++) {
@@ -91,7 +101,6 @@ void TerrainPatch::init() {
         }
     }
     
-    glGenBuffers(1, &vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(),
         &vertices[0], GL_STATIC_DRAW);
@@ -240,6 +249,11 @@ TerrainMesh::TerrainMesh(const Map &map, const Map::Pos &patchSize)
     }*/
 
     patches.push_back(new TerrainPatch(map, Map::Pos(0, 0), map.getSize()-Map::Pos(1,1)));
+}
+
+void TerrainMesh::update() {
+    for (auto patch : patches)
+        patch->update();
 }
 
 void TerrainMesh::draw() {

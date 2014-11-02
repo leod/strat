@@ -89,6 +89,7 @@ int main(int argc, char *argv[]) {
         client.update(dt);
 
         setupGraphics(config, view);
+        terrainMesh.update();
         terrainMesh.draw();
         
         renderBuildingSystem.render(sim.getEntities());

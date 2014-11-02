@@ -12,12 +12,15 @@
 struct GridPoint {
     size_t height;
 
+    // Progress of heightening
+    Fixed heightProgress; // 0 <= heightProgress <= 1
+
     entityx::Entity entity;
 
     Fixed water;
 
     GridPoint()
-        : height(0), entity(), water(0) {
+        : height(0), heightProgress(0), entity(), water(0) {
     }
 };
 
@@ -39,6 +42,10 @@ struct Map {
 
     bool isPoint(const Pos &p) const {
         return p.x < sizeX && p.y < sizeY;
+    }
+
+    bool isPoint(size_t x, size_t y) const {
+        return isPoint(Map::Pos(x, y));
     }
 
     GridPoint &point(size_t x, size_t y) {
@@ -68,11 +75,26 @@ struct Map {
     void forNeighbors(const Pos &p, F f) {
         assert(isPoint(p));
 
-        if (p.y > 0) f(Pos(p.x, p.y-1));
-        if (p.x < sizeX-1 && p.y > 0) f(Pos(p.x+1, p.y-1));
-        if (p.x < sizeX-1 && p.y < sizeY-1) f(Pos(p.x+1, p.y+1));
-        if (p.x > 0 && p.y < sizeY-1) f(Pos(p.x-1, p.y+1));
+        if (p.y > 0) f(point(p.x, p.y-1));
+        if (p.x < sizeX-1 && p.y > 0) f(point(p.x+1, p.y-1));
+        if (p.x < sizeX-1 && p.y < sizeY-1) f(point(p.x+1, p.y+1));
+        if (p.x > 0 && p.y < sizeY-1) f(point(p.x-1, p.y+1));
     }
+
+    template<typename F>
+    void forRectangle(const Pos &p, const Pos &s, F f) {
+        assert(isPoint(p));
+        assert(isPoint(p + s));
+
+        for (size_t x = p.x; x <= p.x + s.x; x++) {
+            for (size_t y = p.y; y <= p.y + s.y; y++) {
+                f(point(x, y));
+            }
+        }
+    }
+
+    void raise(const Pos &p, const Pos &s);
+    void tick();
 
 private:
     size_t sizeX;

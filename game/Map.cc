@@ -49,3 +49,14 @@ Map Map::generate(size_t sizeX, size_t sizeY,
 
     return std::move(map); 
 }
+
+
+void Map::raise(const Pos &p, const Pos &s) {
+    forRectangle(p, s, [&] (GridPoint &p) {
+        p.height++; 
+    });
+}
+
+void Map::tick() {
+
+}

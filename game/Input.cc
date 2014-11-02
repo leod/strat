@@ -80,6 +80,17 @@ void Input::update(double dt) {
             view.hasMapRectangle = true;
         }
     } else {
+        if (view.hasMapRectangle) {
+            Map::Pos a(view.cursor), b(view.mapRectangleStart);
+
+            Order order(Order::RAISE_MAP);
+            order.raiseMap.x = std::min(a.x, b.x);
+            order.raiseMap.y = std::min(a.y, b.y);
+            order.raiseMap.w = std::max(a.x, b.x) - std::min(a.x, b.x);
+            order.raiseMap.h = std::max(a.y, b.y) - std::min(a.y, b.y);
+            client.order(order);
+        }
+
         view.hasMapRectangle = false;
     }
 

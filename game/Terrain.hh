@@ -13,6 +13,7 @@ struct TerrainMesh {
     TerrainMesh(const Map &, const Map::Pos &patchSize);
     ~TerrainMesh();
 
+    void update();
     void draw();
 
     bool intersectWithRay(const Ray &ray, Map::Pos &point, float &t) const;
