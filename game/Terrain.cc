@@ -60,19 +60,21 @@ void TerrainPatch::init() {
 
     for (size_t x = position.x; x < position.x + size.x; x++) {
         for (size_t y = position.y; y < position.y + size.y; y++) {
+            // Two triangles per grid point
+
             glm::vec3 a(POINT(x,y)), b(POINT(x+1,y)),
                       c(POINT(x,y+1)), d(POINT(x+1,y+1));
 
             glm::vec3 n1(glm::normalize(glm::cross(a - d, b - d)));
             glm::vec3 n2(glm::normalize(glm::cross(c - d, a - d)));
 
-            Vertex va1(d, color(d.z), n1);
+            Vertex va1(a, color(a.z), n1);
             Vertex vb1(b, color(b.z), n1);
-            Vertex vc1(a, color(a.z), n1);
+            Vertex vc1(d, color(d.z), n1);
 
-            Vertex va2(a, color(a.z), n2);
+            Vertex va2(d, color(d.z), n2);
             Vertex vb2(c, color(c.z), n2);
-            Vertex vc2(d, color(d.z), n2);
+            Vertex vc2(a, color(a.z), n2);
 
             vertices.push_back(va1);
             vertices.push_back(vb1);
@@ -140,18 +142,18 @@ void TerrainPatch::draw() {
             float minw = 0.1;
 
             if (map.point(x+1,y+1).water > minw || map.point(x+1,y).water > minw ||
-                map.point(x,y+1).water > minw || map.point(x,y).water > minw) {
+                map.point(x,y).water > minw) {
                 glm::vec3 n1(glm::normalize(glm::cross(a - d, b - d)));
                 glNormal3f(n1.x, n1.y, n1.z);
 
                 glColor4f(0.0f, 0.2f, 0.5f, ALPHA((cd + cb + ca) / 3));
-                glVertex3f(d.x, d.y, d.z);
+                glVertex3f(a.x, a.y, a.z);
                 //glColor4f(0.0f, 0.2f, 0.5f, ALPHA(cb));
                 glVertex3f(b.x, b.y, b.z);
+                glVertex3f(d.x, d.y, d.z);
                 //glColor4f(0.0f, 0.2f, 0.5f, ALPHA(ca));
-                glVertex3f(a.x, a.y, a.z);
 
-                glm::vec3 n2(glm::normalize(glm::cross(c - d, a - d)));
+                /*glm::vec3 n2(glm::normalize(glm::cross(c - d, a - d)));
                 glNormal3f(n2.x, n2.y, n2.z);
 
                 glColor4f(0.0f, 0.2f, 0.5f, ALPHA((ca + cc + cd) / 3));
@@ -159,11 +161,20 @@ void TerrainPatch::draw() {
                 //glColor4f(0.0f, 0.2f, 0.5f, ALPHA(cc));
                 glVertex3f(c.x, c.y, c.z);
                 //glColor4f(0.0f, 0.2f, 0.5f, ALPHA(cd));
-                glVertex3f(d.x, d.y, d.z);
+                glVertex3f(d.x, d.y, d.z);*/
             }
             
-            if (map.point(x,y).water > 0 || map.point(x,y+1).water > 0 ||
-                map.point(x+1,y+1).water > 0) {
+            if (map.point(x,y).water > minw || map.point(x,y+1).water > minw ||
+                map.point(x+1,y+1).water > minw) {
+                glm::vec3 n2(glm::normalize(glm::cross(c - d, a - d)));
+                glNormal3f(n2.x, n2.y, n2.z);
+
+                glColor4f(0.0f, 0.2f, 0.5f, ALPHA((ca + cc + cd) / 3));
+                glVertex3f(d.x, d.y, d.z);
+                //glColor4f(0.0f, 0.2f, 0.5f, ALPHA(cc));
+                glVertex3f(c.x, c.y, c.z);
+                glVertex3f(a.x, a.y, a.z);
+                //glColor4f(0.0f, 0.2f, 0.5f, ALPHA(cd));
             }
 
         }
@@ -185,17 +196,17 @@ bool TerrainPatch::intersectWithRay(const Ray &ray, Map::Pos &point,
             glm::vec3 a(POINT(x,y)), b(POINT(x+1,y)),
                       c(POINT(x,y+1)), d(POINT(x+1,y+1));
             float t, u, v;
-            if (intersectTriangleWithRay(ray, d, b, a, t, u, v) && t < tMin) {
-                tMin = t;
-                if (ROUND(u) == 0 && ROUND(v) == 0) point = Map::Pos(x+1,y+1);
-                else if (ROUND(u) == 1 && ROUND(v) == 0) point = Map::Pos(x+1,y);
-                else point = Map::Pos(x,y);
-            }
-            if (intersectTriangleWithRay(ray, a, c, d, t, u, v) && t < tMin) {
+            if (intersectTriangleWithRay(ray, a, b, d, t, u, v) && t < tMin) {
                 tMin = t;
                 if (ROUND(u) == 0 && ROUND(v) == 0) point = Map::Pos(x,y);
-                else if (ROUND(u) == 1 && ROUND(v) == 0) point = Map::Pos(x,y+1);
+                else if (ROUND(u) == 1 && ROUND(v) == 0) point = Map::Pos(x+1,y);
                 else point = Map::Pos(x+1,y+1);
+            }
+            if (intersectTriangleWithRay(ray, d, c, a, t, u, v) && t < tMin) {
+                tMin = t;
+                if (ROUND(u) == 0 && ROUND(v) == 0) point = Map::Pos(x+1,y+1);
+                else if (ROUND(u) == 1 && ROUND(v) == 0) point = Map::Pos(x,y+1);
+                else point = Map::Pos(x,y);
             }
         }
     }

@@ -147,16 +147,22 @@ void setupGraphics(const Config &config, const View &view) {
 
     //GLfloat mat_specular[] = { 0.25, 0.25, 0.25, 1.0 };
     GLfloat mat_specular[] = {0,0,0,0};
-    GLfloat mat_shininess[] = { 10.0 };
+    GLfloat mat_shininess[] = { 100.0 };
+    GLfloat mat_diffuse[] = { 0.75, 0.75, 0.75, 1 };
     GLfloat light_position[] = { 1, 1, 1, 0.0 };
+    GLfloat light_diffuse[] = { 1, 1, 1, 1 };
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glShadeModel(GL_SMOOTH);
 
     glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
     glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mat_diffuse);
     glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, light_diffuse);
+    glLightModelf(GL_LIGHT_MODEL_LOCAL_VIEWER, 1.0f);
 
-    GLfloat global_ambient[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+    GLfloat global_ambient[] = { 0.8f, 0.8f, 0.8f, 1.0f };
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
 
     glEnable(GL_LIGHTING);
@@ -164,7 +170,7 @@ void setupGraphics(const Config &config, const View &view) {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
     glEnable(GL_COLOR_MATERIAL);
-    glDisable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);

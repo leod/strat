@@ -169,6 +169,9 @@ void SimState::addResourceTransfer(Entity fromEntity, Entity toEntity,
                      toBuilding(toEntity.component<Building>());
     assert(fromBuilding && toBuilding);
 
+    // For now: start and end in the middle of the top of the buildings
+    // These positions are used to calculate the distance of the transfer,
+    // and for rendering.
     fvec3 fromPosition(fromBuilding->getPosition());
     fvec3 toPosition(toBuilding->getPosition());
 
@@ -204,11 +207,11 @@ void SimState::raiseWaterLevel() {
 
 void SimState::waterTick() {
     time += getTickLengthS();
-    if (time.toInt() / 5 >= waterLevel) {
-        raiseWaterLevel();
+    if (time.toInt() / 20 >= waterLevel && waterLevel < map.getMaxHeight()) {
+        //raiseWaterLevel();
     }
 
-    Fixed flowPerS(Fixed(4) / Fixed(2));
+    Fixed flowPerS(Fixed(4) / Fixed(6));
 
     // Calculate water flow from grid point to grid point
     for (size_t x = 0; x < map.getSizeX(); x++) {
