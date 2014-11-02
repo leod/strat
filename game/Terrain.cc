@@ -110,6 +110,41 @@ void TerrainPatch::draw() {
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // Water test
+    glBegin(GL_TRIANGLES);
+    for (size_t x = position.x; x < position.x + size.x - 1; x++) {
+        for (size_t y = position.y; y < position.y + size.y - 1; y++) {
+            glm::vec3 a(POINT(x,y)), b(POINT(x+1,y)),
+                      c(POINT(x,y+1)), d(POINT(x+1,y+1));
+            float dz = 0.01;
+            a.z += dz + map.point(x,y).water;
+            b.z += dz + map.point(x+1,y).water;
+            c.z += dz + map.point(x,y+1).water;
+            d.z += dz + map.point(x+1,y+1).water;
+
+            if (map.point(x+1,y+1).water > 0 || map.point(x+1,y).water > 0 ||
+                map.point(x,y).water > 0) {
+
+                glColor4f(0.0f, 1.0f, 0.0f, 0.8f);
+
+                glVertex3f(d.x, d.y, d.z);
+                glVertex3f(b.x, b.y, b.z);
+                glVertex3f(a.x, a.y, a.z);
+            }
+            
+            if (map.point(x,y).water > 0 || map.point(x,y+1).water > 0 ||
+                map.point(x+1,y+1).water > 0) {
+                glColor4f(0.0f, 1.0f, 0.0f, 0.8f);
+
+                glVertex3f(a.x, a.y, a.z);
+                glVertex3f(c.x, c.y, c.z);
+                glVertex3f(d.x, d.y, d.z);
+            }
+
+        }
+    }
+    glEnd();
 }
 
 bool TerrainPatch::intersectWithRay(const Ray &ray, Map::Pos &point,

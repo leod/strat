@@ -76,14 +76,15 @@ void RenderBuildingSystem::render(entityx::EntityManager &entities) {
     for (entityx::Entity entity:
          entities.entities_with_components(gameObject, building)) {
         glPushMatrix();
-        glTranslatef(building->getPosition().x, building->getPosition().y,
-                     map.point(building->getPosition().x,
-                               building->getPosition().y).height );
+        glTranslatef(building->getPosition().x,
+                     building->getPosition().y,
+                     building->getPosition().z);
         glScalef(building->getTypeInfo().size.x,
                  building->getTypeInfo().size.y,
                  building->getTypeInfo().size.z);
+
         assert(gameObject->getOwner() > 0 && gameObject->getOwner()-1 < 4);
-        glm::vec3 color(playerColors[gameObject->getOwner()-1]);
+        glm::vec3 color(playerColors[gameObject->getOwner()-1]); //TODO
         glBegin(GL_QUADS);
         glColor4f(color.x, color.y, color.z, 1.0f);
         drawCube();
@@ -121,7 +122,8 @@ void RenderResourceTransferSystem::render(entityx::EntityManager &entities) {
         glPushMatrix();
         glTranslatef(dda.x, dda.y, dda.z);
         glTranslatef(-0.5f, -0.5f, 0.0f);
-        glm::vec3 color(1.0, 0.0, 1.0);
+        //glm::vec3 color(1.0, 0.0, 1.0);
+        glm::vec3 color(r->color);
         glBegin(GL_QUADS);
         glColor4f(color.x, color.y, color.z, 1.0f);
         drawCube();

@@ -54,6 +54,9 @@ struct SimState : entityx::EntityX {
                              ResourceType resource,
                              size_t amount); 
 
+    void raiseWaterLevel();
+    void waterTick();
+
 private:
     const GameSettings &settings;
     Map map;
@@ -62,6 +65,10 @@ private:
     PlayerMap players;
 
     size_t entityCounter;
+
+    Fixed time;
+
+    size_t waterLevel;
 
     static PlayerMap playersFromSettings(const GameSettings &);
 };

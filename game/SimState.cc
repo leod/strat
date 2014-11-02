@@ -14,7 +14,9 @@ SimState::SimState(const GameSettings &settings)
                         settings.heightLimit,
                         settings.randomSeed)),
       players(playersFromSettings(settings)),
-      entityCounter(0) {
+      entityCounter(0),
+      time(0),
+      waterLevel(0) {
     // Place random spawn points for now...
     for (auto &player : settings.players) {
         size_t x, y;
@@ -86,7 +88,8 @@ entityx::Entity SimState::findClosestBuilding(BuildingType type,
                 && point.entity.component<GameObject>()->getOwner() == owner) {
                 size_t distance = sqDistance(p, glm::uvec2(x, y));
 
-                if (distance <= maxRange * maxRange && (!entity.valid() || distance < minDistance)) {
+                if (distance <= maxRange * maxRange
+                    && (!entity.valid() || distance < minDistance)) {
                     entity = point.entity;
                     minDistance = distance;
                 }
@@ -182,6 +185,56 @@ void SimState::addResourceTransfer(Entity fromEntity, Entity toEntity,
                                     fromPosition, toPosition,
                                     resource,
                                     amount);
+}
+
+void SimState::raiseWaterLevel() {
+    std::cout << "Raising water level" << std::endl;
+
+    waterLevel++;
+
+    if (waterLevel == 1) {
+        for (size_t x = 0; x < map.getSizeX(); x++) {
+            for (size_t y = 0; y < map.getSizeY(); y++) {
+                if (map.point(x, y).height == 0)
+                    map.point(x, y).water = true;
+            }
+        }
+    }
+}
+
+void SimState::waterTick() {
+    time += getTickLengthS();
+    if (time.toInt() / 10 >= waterLevel) {
+        raiseWaterLevel();
+    }
+
+    Fixed flowPerS(Fixed(1));
+
+    for (size_t x = 0; x < map.getSizeX(); x++) {
+        for (size_t y = 0; y < map.getSizeY(); y++) {
+            GridPoint &p(map.point(x, y));
+
+            if (p.height < waterLevel) {
+                if (p.water < Fixed(1)) {
+                    Fixed sum;
+
+                    map.forNeighbors(Map::Pos(x, y), [&] (const Map::Pos &n) {
+                        Fixed value(map.point(n).water);
+                        if (value > Fixed(1)) value = Fixed(1);
+
+                        sum += value * flowPerS * getTickLengthS();
+                    });
+
+                    p.water += sum;
+                } else if (p.water < Fixed(waterLevel - p.height)) {
+                    p.water += flowPerS;
+                }
+
+                if (p.water > Fixed(waterLevel - p.height))
+                    p.water = Fixed(waterLevel - p.height);
+            }
+        }
+    }
 }
 
 SimState::PlayerMap SimState::playersFromSettings(const GameSettings &settings) {

@@ -72,6 +72,8 @@ public:
     const size_t amount;
     const Fixed distance;
 
+    const glm::vec3 color;
+
     ResourceTransfer(Entity fromEntity, Entity toEntity,
                      fvec3 fromPosition, fvec3 toPosition,
                      ResourceType resource,
@@ -82,7 +84,8 @@ public:
           fromPosition(fromPosition), toPosition(toPosition),
           resource(resource),
           amount(amount),
-          distance(manhattanDistance(fromPosition, toPosition)) {
+          distance(manhattanDistance(fromPosition, toPosition)),
+          color(randomFloat(), randomFloat(), randomFloat()) {
         assert(distance > Fixed(0));
     }
 

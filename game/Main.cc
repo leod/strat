@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     }
 
     Client client("leo");
-    client.connect("192.168.11.41", 1234);
+    client.connect("localhost", 1234);
 
     std::cout << "Waiting for the game to start" << std::endl;
     while (!client.isStarted()) {
@@ -114,9 +114,9 @@ int main(int argc, char *argv[]) {
 
         std::stringstream ss;
         ss << "Strats (" << fps << " FPS, "
-                         << "x=" << static_cast<int>(view.target.x) << ", "
-                         << "y=" << static_cast<int>(view.target.y) << ", "
-                         << "z=" << static_cast<int>(view.target.z)
+                         << "x=" << static_cast<int>(view.cursor.x) << ", "
+                         << "y=" << static_cast<int>(view.cursor.y) << ", "
+                         << "z=" << static_cast<int>(view.cursorHeight)
                          << ")";
         glfwSetWindowTitle(window, ss.str().c_str());
     } 

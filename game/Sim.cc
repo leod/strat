@@ -4,6 +4,7 @@
 
 Sim::Sim(const GameSettings &settings)
     : state(settings) {
+    state.raiseWaterLevel();
 }
 
 void Sim::runTick(const std::vector<Order> &orders) {
@@ -12,6 +13,7 @@ void Sim::runTick(const std::vector<Order> &orders) {
             state.runOrder(order);
     }
 
+    state.waterTick();
     minerBuildingSystem.tick(state);
     resourceTransferSystem.tick(state);
 }

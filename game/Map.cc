@@ -5,10 +5,11 @@
 #include <cstdlib>
 
 Map::Map(size_t sizeX, size_t sizeY)
-    : sizeX(sizeX)
-    , sizeY(sizeY)
-    , maxHeight(0)
-    , points(sizeX * sizeY) {
+    : sizeX(sizeX),
+      sizeY(sizeY),
+      maxHeight(0),
+      points(sizeX * sizeY) {
+    assert(sizeX > 0 && sizeY > 0);
 } 
 
 Map Map::generate(size_t sizeX, size_t sizeY,

@@ -18,6 +18,7 @@ struct View {
     float distance;
 
     Map::Pos cursor;
+    size_t cursorHeight;
 };
 
 struct Input {

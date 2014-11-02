@@ -36,6 +36,7 @@ Input::Input(GLFWwindow *window, Client &client, const TerrainMesh &terrain)
     view.target.y = 64;
     view.distance = 40.0f;
     view.angle = 0.0f;
+    view.cursorHeight = 0;
 }
 
 const View &Input::getView() const {
@@ -54,14 +55,17 @@ void Input::update(double dt) {
                   glm::vec3(building->getPosition() + building->getTypeInfo().size));
 
         if (aabb.intersectWithRay(ray, 1.0f, 5000.0f)) {
-            std::cout << "HIT " << gameObject->getId() << std::endl;
+            //std::cout << "HIT " << gameObject->getId() << std::endl;
         }
     }
 
     float mapT;
     Map::Pos cursor;
     if (terrain.intersectWithRay(ray, cursor, mapT)) {
+        assert(map.isPoint(cursor));
+
         view.cursor = cursor;
+        view.cursorHeight = map.point(cursor).height;
     }
 
     glm::vec2 mapDirection(view.target - view.position);
