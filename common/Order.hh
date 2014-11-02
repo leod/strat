@@ -12,7 +12,8 @@ struct Order {
         BUILD,
         ATTACK,
         STOP,
-        REMOVE
+        REMOVE,
+        RAISE_MAP
     } type;
 
     Order(Type type = UNDEFINED)
@@ -39,6 +40,10 @@ struct Order {
         struct { 
             ObjectId objectId;
         } remove;
+
+        struct {
+            uint16_t x, y, w, h;
+        } raiseMap;
     };
 };
 

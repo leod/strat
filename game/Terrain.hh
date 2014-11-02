@@ -8,8 +8,10 @@
 
 struct TerrainPatch;
 
+// Draws the map
 struct TerrainMesh {
     TerrainMesh(const Map &, const Map::Pos &patchSize);
+    ~TerrainMesh();
 
     void draw();
 

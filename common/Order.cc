@@ -24,10 +24,16 @@ void read(BitStreamReader &reader, Order &order) {
         return;
     case Order::STOP:
         read(reader, order.stop.objectId);
-        break;
+        return;
     case Order::REMOVE:
         read(reader, order.remove.objectId);
-        break;
+        return;
+    case Order::RAISE_MAP:
+        read(reader, order.raiseMap.x);
+        read(reader, order.raiseMap.y);
+        read(reader, order.raiseMap.w);
+        read(reader, order.raiseMap.h);
+        return;
     }
 }
 
@@ -51,9 +57,15 @@ void write(BitStreamWriter &writer, const Order &order) {
         return;
     case Order::STOP:
         write(writer, order.stop.objectId);
-        break;
+        return;
     case Order::REMOVE:
         write(writer, order.remove.objectId);
-        break;
+        return;
+    case Order::RAISE_MAP:
+        write(writer, order.raiseMap.x);
+        write(writer, order.raiseMap.y);
+        write(writer, order.raiseMap.w);
+        write(writer, order.raiseMap.h);
+        return;
     }
 }

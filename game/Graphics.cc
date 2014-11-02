@@ -71,6 +71,8 @@ void RenderBuildingSystem::configure(entityx::EventManager &events) {
 }
 
 void RenderBuildingSystem::render(entityx::EntityManager &entities) {
+    glDisable(GL_CULL_FACE);
+
     GameObject::Handle gameObject;
     Building::Handle building;
     for (entityx::Entity entity:
@@ -91,18 +93,23 @@ void RenderBuildingSystem::render(entityx::EntityManager &entities) {
         glEnd();
         glPopMatrix();
     }
+
+    glEnable(GL_CULL_FACE);
 }
 
 void RenderBuildingSystem::receive(const BuildingCreated &event) {
 }
 
 void RenderResourceTransferSystem::render(entityx::EntityManager &entities) {
+    glDisable(GL_CULL_FACE);
+
     ResourceTransfer::Handle r;
     for (auto entity : entities.entities_with_components(r)) {
         glm::vec3 a(r->fromPosition), b(r->toPosition);
         a.z = a.z ;
         b.z = b.z ;
 
+        // Bezier interpolation
         glm::vec3 m((a.x + b.x) * 0.5,
                     (a.y + b.y) * 0.5,
                     (a.z + b.z) * 0.5f + r->distance.toFloat() * 0.5f);
@@ -130,6 +137,8 @@ void RenderResourceTransferSystem::render(entityx::EntityManager &entities) {
         glEnd();
         glPopMatrix();
     }
+
+    glEnable(GL_CULL_FACE);
 }
 
 void setupGraphics(const Config &config, const View &view) {
@@ -149,7 +158,7 @@ void setupGraphics(const Config &config, const View &view) {
     GLfloat mat_specular[] = {0,0,0,0};
     GLfloat mat_shininess[] = { 100.0 };
     GLfloat mat_diffuse[] = { 0.75, 0.75, 0.75, 1 };
-    GLfloat light_position[] = { 1, 1, 1, 0.0 };
+    GLfloat light_position[] = { 3, 3, 5, 0.0 };
     GLfloat light_diffuse[] = { 1, 1, 1, 1 };
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glShadeModel(GL_SMOOTH);
@@ -162,7 +171,7 @@ void setupGraphics(const Config &config, const View &view) {
     glLightfv(GL_LIGHT0, GL_SPECULAR, light_diffuse);
     glLightModelf(GL_LIGHT_MODEL_LOCAL_VIEWER, 1.0f);
 
-    GLfloat global_ambient[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+    GLfloat global_ambient[] = { 0.5f, 0.5f, 0.5f, 1.0f };
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
 
     glEnable(GL_LIGHTING);
@@ -181,17 +190,51 @@ void setupGraphics(const Config &config, const View &view) {
 }
 
 void drawCursor(const Map &map, const View &view) {
+    float dz = 0.01;
     float tx = view.cursor.x;
     float ty = view.cursor.y;
-    float tz = map.point(view.cursor).height + 0.001;
+    float tz = map.point(view.cursor).height + dz;
 
     float s = 0.5f;
 
-    glBegin(GL_QUADS);
-    glColor4f(1.0f, 0.0f, 1.0f, 0.5f);
-    glVertex3f(tx - s, ty - s, tz);
-    glVertex3f(tx + s, ty - s, tz);
-    glVertex3f(tx + s, ty + s, tz);
-    glVertex3f(tx - s, ty + s, tz);
-    glEnd();
+    if (!view.hasMapRectangle) {
+        glBegin(GL_QUADS);
+        glColor4f(1.0f, 0.0f, 1.0f, 0.5f);
+        glVertex3f(tx - s, ty - s, tz);
+        glVertex3f(tx + s, ty - s, tz);
+        glVertex3f(tx + s, ty + s, tz);
+        glVertex3f(tx - s, ty + s, tz);
+        glEnd();
+    } else {
+        glBegin(GL_LINE_STRIP);
+        glColor4f(1.0, 1.0, 1.0, 0.9f);
+        for (size_t x = std::min(view.mapRectangleStart.x, view.cursor.x);
+             x <= std::max(view.mapRectangleStart.x, view.cursor.x);
+             x++) {
+            glVertex3f(x, view.mapRectangleStart.y, map.point(x, view.mapRectangleStart.y).height + dz);
+        }
+        glEnd();
+        glBegin(GL_LINE_STRIP);
+        for (size_t x = std::min(view.mapRectangleStart.x, view.cursor.x);
+             x <= std::max(view.mapRectangleStart.x, view.cursor.x);
+             x++) {
+            glVertex3f(x, view.cursor.y, map.point(x, view.cursor.y).height + dz);
+        }
+        glEnd();
+        glBegin(GL_LINE_STRIP);
+        for (size_t y = std::min(view.mapRectangleStart.y, view.cursor.y);
+             y <= std::max(view.mapRectangleStart.y, view.cursor.y);
+             y++) {
+            glVertex3f(view.mapRectangleStart.x, y, map.point(view.mapRectangleStart.x, y).height + dz);
+        }
+        glEnd();
+        glBegin(GL_LINE_STRIP);
+        for (size_t y = std::min(view.mapRectangleStart.y, view.cursor.y);
+             y <= std::max(view.mapRectangleStart.y, view.cursor.y);
+             y++) {
+            glVertex3f(view.cursor.x, y, map.point(view.cursor.x, y).height + dz);
+        }
+        glEnd();
+
+    }
 }

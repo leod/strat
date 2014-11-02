@@ -50,6 +50,11 @@ TerrainPatch::TerrainPatch(const Map &map,
     init();
 }
 
+TerrainMesh::~TerrainMesh() {
+    for (auto patch : patches)
+        delete patch;
+}
+
 void TerrainPatch::init() {
     for (size_t x = position.x; x < position.x + size.x; x++) {
         for (size_t y = position.y; y < position.y + size.y; y++) {

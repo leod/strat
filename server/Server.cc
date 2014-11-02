@@ -52,10 +52,10 @@ void startTick() {
         assert(client->ticksDone <= ticksStarted);
         assert(ticksStarted - client->ticksDone <= 2);
 
-        std::cout << "Client at " << client->ticksDone << std::endl;
+        //std::cout << "Client at " << client->ticksDone << std::endl;
     }
 
-    std::cout << "Starting tick " << ticksStarted + 1 << std::endl;
+    //std::cout << "Starting tick " << ticksStarted + 1 << std::endl;
 
     Message message(Message::SERVER_TICK);
     message.server_tick.orders = nextOrders;

@@ -21,6 +21,8 @@ struct GridPoint {
     }
 };
 
+// The map holds all the information about the terrain
+// that is needed for the game logic simulation.
 struct Map {
     typedef glm::uvec2 Pos;
 

@@ -8,6 +8,14 @@
 #include <GL/glu.h>
 #include <glm/gtx/rotate_vector.hpp>
 
+View::View()
+    : angle(0),
+      distance(40.0f),
+      cursorHeight(0),
+      hasMapRectangle(false) {
+}
+
+// Calculates a ray going from the camera position in the direction the mouse is pointing
 static Ray calculateViewRay(double mx, double my, const View &view) {
     GLint viewport[4];
     GLdouble modelview[16];
@@ -32,11 +40,8 @@ Input::Input(GLFWwindow *window, Client &client, const TerrainMesh &terrain)
     : window(window), client(client), sim(client.getSim()),
       terrain(terrain), map(sim.getState().getMap()),
       scrollSpeed(5.0f), wasPressB(false), wasPressN(false) {
-    view.target.x = 64;
-    view.target.y = 64;
-    view.distance = 40.0f;
-    view.angle = 0.0f;
-    view.cursorHeight = 0;
+    view.target.x = map.getSizeX() / 2;
+    view.target.y = map.getSizeY() / 2;
 }
 
 const View &Input::getView() const {
@@ -59,6 +64,7 @@ void Input::update(double dt) {
         }
     }
 
+
     float mapT;
     Map::Pos cursor;
     if (terrain.intersectWithRay(ray, cursor, mapT)) {
@@ -68,27 +74,32 @@ void Input::update(double dt) {
         view.cursorHeight = map.point(cursor).height;
     }
 
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
+        if (!view.hasMapRectangle) {
+            view.mapRectangleStart = view.cursor;
+            view.hasMapRectangle = true;
+        }
+    } else {
+        view.hasMapRectangle = false;
+    }
+
     glm::vec2 mapDirection(view.target - view.position);
 
     float moveDelta = scrollSpeed * dt;
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS
-        && view.target.y < map.getSizeY()) {
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && view.target.y < map.getSizeY()) {
         glm::vec2 scroll(mapDirection * moveDelta);
         tryScroll(scroll);
     }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS
-        && view.target.x > 0) {
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS && view.target.x > 0) {
         glm::vec2 scroll(glm::cross(glm::vec3(0, 0, 1), glm::vec3(mapDirection, 0)) * moveDelta);
         tryScroll(scroll);
     }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS
-        && view.target.y > 0) {
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && view.target.y > 0) {
         glm::vec2 scroll(-mapDirection * moveDelta);
         tryScroll(scroll);
     }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS
-        && view.target.x < map.getSizeX()) {
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS && view.target.x < map.getSizeX()) {
         glm::vec2 scroll(-glm::cross(glm::vec3(0, 0, 1), glm::vec3(mapDirection, 0)) * moveDelta);
         tryScroll(scroll);
     }
@@ -115,7 +126,6 @@ void Input::update(double dt) {
             order.build.x = static_cast<uint16_t>(view.cursor.x);
             order.build.y = static_cast<uint16_t>(view.cursor.y);
             order.build.type = BUILDING_MINER;
-
             client.order(order);
         }
     } else wasPressB = false;
@@ -127,7 +137,6 @@ void Input::update(double dt) {
             order.build.x = static_cast<uint16_t>(view.cursor.x);
             order.build.y = static_cast<uint16_t>(view.cursor.y);
             order.build.type = BUILDING_STORE;
-
             client.order(order);
         }
     } else wasPressN = false;

@@ -207,7 +207,7 @@ void SimState::raiseWaterLevel() {
 
 void SimState::waterTick() {
     time += getTickLengthS();
-    if (time.toInt() / 20 >= waterLevel && waterLevel < map.getMaxHeight()) {
+    if ((size_t)time.toInt() / 20 >= waterLevel && waterLevel < map.getMaxHeight()) {
         //raiseWaterLevel();
     }
 

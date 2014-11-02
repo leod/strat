@@ -10,6 +10,11 @@
 
 #include <string>
 
+// The client connects to the specified game server,
+// and then runs a game simulation with the settings given by the server.
+//
+// Everytime the server sends a tick to the client, it is
+// executed in the local simulation.
 struct Client {
     Client(const std::string &username);
     ~Client();

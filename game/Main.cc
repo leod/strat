@@ -31,24 +31,18 @@ int main(int argc, char *argv[]) {
     }
 
     glfwSetErrorCallback(errorCallback);
-
-    //glfwWindowHint(GLFW_SAMPLES, 4);
-    //glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_DEPTH_BITS, 32);
     GLFWwindow *window = glfwCreateWindow(config.screenWidth,
         config.screenHeight, "Strats", NULL, NULL);
-
     glfwMakeContextCurrent(window);
-
-    if (glewInit() != GLEW_OK) {
-        std::cerr << "GLEW initialization failed" << std::endl;
-        return 1;
-    }
 
     if (!window) {
         glfwTerminate();
+        return 1;
+    }
+
+    if (glewInit() != GLEW_OK) {
+        std::cerr << "GLEW initialization failed" << std::endl;
         return 1;
     }
 

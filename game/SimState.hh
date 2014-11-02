@@ -30,6 +30,13 @@ private:
 
 // Contains all the relevant information about the game state,
 // so that the next state can be calculated deterministically.
+//
+// This state includes:
+// - the map, which stores the heights of the grid points and the water state,
+// - information about players, and
+// - the game entities which are managed as components using EntityX
+//
+// SimState also offers several functions to modify the game state.
 struct SimState : entityx::EntityX {
     SimState(const GameSettings &);
 
