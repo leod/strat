@@ -4,6 +4,8 @@
 #include <stdexcept>
 #include <cassert>
 
+#include <IL/il.h>
+
 namespace opengl {
 
 Texture::Texture() {
@@ -11,34 +13,43 @@ Texture::Texture() {
 }
 
 Texture::Texture(std::string const& filename) {
-    /*sf::Image image;
-    if (!image.loadFromFile(filename))
-        throw std::runtime_error("Failed to load texture " + filename);*/
+    ILuint image;
+    ilGenImages(1, &image);
+    ilBindImage(image);
+    if (!ilLoadImage(filename.c_str()))
+        throw std::runtime_error("Couldn't load image " + filename);
 
     glGenTextures(1, &name);
     bind();
 
-    /*glTexImage2D(GL_TEXTURE_2D,
-                 0, // LOD
-                 GL_RGBA,
-                 image.getSize().x,
-                 image.getSize().y,
-                 0, // border
-                 GL_RGBA,
-                 GL_UNSIGNED_BYTE,
-                 image.getPixelsPtr());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);*/
+    //ILint format = ilGetInteger(IL_IMAGE_FORMAT);
+    //assert(format == IL_RGB || format == IL_RGBA);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+    glTexImage2D(GL_TEXTURE_2D,
+                 0, // LOD
+                 ilGetInteger(IL_IMAGE_BPP),
+                 ilGetInteger(IL_IMAGE_WIDTH),
+                 ilGetInteger(IL_IMAGE_HEIGHT),
+                 0, // border
+                 ilGetInteger(IL_IMAGE_FORMAT),
+                 GL_UNSIGNED_BYTE,
+                 ilGetData());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    /*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
             GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-            GL_LINEAR_MIPMAP_LINEAR);
-    /*gluBuild2DMipmaps(GL_TEXTURE_2D, 4, image.getSize().x, image.getSize().y,
-                      GL_RGBA, GL_UNSIGNED_BYTE, image.getPixelsPtr()); */
+            GL_LINEAR_MIPMAP_LINEAR);*/
+    /*gluBuild2DMipmaps(GL_TEXTURE_2D, 4, width, height,
+                      GL_RGBA, GL_UNSIGNED_BYTE, ilGetData()); */
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    ilDeleteImages(1, &image);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 Texture::~Texture() {

@@ -12,8 +12,6 @@
 using std::cout;
 using std::endl;
 
-namespace game {
-
 char const* severityToString(LogSeverity severity) {
     switch (severity) {
     case SEVERITY_TRACE:
@@ -160,5 +158,3 @@ void Log::setSeverityFilter(std::string const& logger, LogSeverity severity) {
 
 std::vector<std::unique_ptr<LogSink>> Log::sinks;
 std::map<std::string, LogSeverity> Log::severityFilters;
-
-} // namespace game

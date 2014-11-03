@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pack>
+	<properties>
+		<name>DevIL</name>
+		<version>1.7.8</version>
+	</properties>
+	<main>
+		<dependencies>
+			<dependency>
+				<includes>
+					<path>include</path>
+				</includes>
+				<libraries>
+					<lib>IL</lib>
+				</libraries>
+			</dependency>
+		</dependencies>
+	</main>
+	<imports>
+		<import build="release" file="lib/${ENV_NAME}/Release/library-description.xml" />
+		<import build="debug" file="lib/${ENV_NAME}/Debug/library-description.xml" />
+	</imports>
+</pack>

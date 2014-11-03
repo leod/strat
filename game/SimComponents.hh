@@ -56,6 +56,17 @@ private:
     Fixed amountStored;
 };
 
+struct Tree : entityx::Component<Tree> {
+    Tree(const glm::uvec3 &position)
+        : position(position) {
+    }   
+
+    const glm::uvec3 &getPosition() const { return position; }
+
+private:
+    glm::uvec3 position;
+};
+
 class ResourceTransfer : public entityx::Component<ResourceTransfer> {
     Fixed lastProgress; // e.g. for interpolation
     Fixed progress;

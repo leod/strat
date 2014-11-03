@@ -5,12 +5,14 @@
 #include "InterpState.hh"
 #include "Input.hh"
 #include "Terrain.hh"
+#include "util/Log.hh"
 
 #include <entityx/entityx.h>
 
 #include <cstdlib>
 
 #include <GL/glew.h>
+#include <IL/il.h>
 
 #define GLFW_INCLUDE_GLU
 #include <GLFW/glfw3.h>
@@ -23,12 +25,16 @@ void errorCallback(int error, const char *description) {
 }
 
 int main(int argc, char *argv[]) {
+    Log::addSink(new ConsoleLogSink);
+
     Config config;
 
     if (!glfwInit()) {
         std::cerr << "GLFW initialization failed" << std::endl;
         return 1;
     }
+
+    ilInit();
 
     glfwSetErrorCallback(errorCallback);
     glfwWindowHint(GLFW_DEPTH_BITS, 32);
@@ -65,9 +71,12 @@ int main(int argc, char *argv[]) {
     const Map &map(simState.getMap());
     const InterpState &interp(client.getInterp());
 
+    opengl::TextureManager textures;
     TerrainMesh terrainMesh(map, Map::Pos(16, 16));
+
     RenderBuildingSystem renderBuildingSystem(map);
     RenderResourceTransferSystem renderResourceTransferSystem(map, interp);
+    RenderTreeSystem renderTreeSystem(map, textures);
 
     Input input(window, client, terrainMesh);
     const View &view(input.getView());
@@ -89,11 +98,12 @@ int main(int argc, char *argv[]) {
         client.update(dt);
 
         setupGraphics(config, view);
-        terrainMesh.update();
+        //terrainMesh.update();
         terrainMesh.draw();
         
         renderBuildingSystem.render(sim.getEntities());
         renderResourceTransferSystem.render(sim.getEntities());
+        renderTreeSystem.render(sim.getEntities());
         
         drawCursor(map, view);
 

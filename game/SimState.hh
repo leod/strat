@@ -45,6 +45,8 @@ struct SimState : entityx::EntityX {
                                         const glm::uvec2 &p,
                                         size_t maxRange) const;
 
+    void placeTree(const glm::uvec2 &p);
+
     bool isOrderValid(const Order &) const;
     void runOrder(const Order &);
     

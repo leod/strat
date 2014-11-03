@@ -11,13 +11,11 @@
 
 #define STRINGIFY(a) #a
 
-#define LOG(sev, logger) ::game::LogMessageBuilder(sev, STRINGIFY(logger), \
+#define LOG(sev, logger) ::LogMessageBuilder(sev, STRINGIFY(logger), \
                                                    __FILE__, __LINE__)
-#define TRACE(logger) LOG(::game::SEVERITY_TRACE, logger)
-#define INFO(logger) LOG(::game::SEVERITY_INFO, logger)
-#define WARN(logger) LOG(::game::SEVERITY_WARN, logger)
-
-namespace game {
+#define TRACE(logger) LOG(::SEVERITY_TRACE, logger)
+#define INFO(logger) LOG(::SEVERITY_INFO, logger)
+#define WARN(logger) LOG(::SEVERITY_WARN, logger)
 
 enum LogSeverity {
     SEVERITY_TRACE,
@@ -90,5 +88,3 @@ private:
     static std::vector<std::unique_ptr<LogSink>> sinks;
     static std::map<std::string, LogSeverity> severityFilters;
 };
-    
-} // namespace game

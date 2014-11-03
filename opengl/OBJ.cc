@@ -101,6 +101,7 @@ OBJ::MaterialLib OBJ::loadMaterialLib(std::string const& filename,
 void OBJ::load(std::string const& filename, TextureManager& textures) {
     int lineNumber = 0;
     auto error = [&] (std::string const& error) {
+            std::cout << lineNumber << std::endl;
         throw std::runtime_error("Error while loading OBJ file \"" +
                                  filename + "\": " + error);
     };
@@ -135,7 +136,7 @@ void OBJ::load(std::string const& filename, TextureManager& textures) {
     auto addPart = [&] () {
         if (curVertices.empty())
             return;
-        if (!curTexCoords.empty()) {
+        if (!curTexCoords.empty() && !curNormals.empty()) {
             if (curVertices.size() != curNormals.size() ||
                 curNormals.size() != curTexCoords.size())
                 error("Inconsistent faces");
@@ -145,6 +146,15 @@ void OBJ::load(std::string const& filename, TextureManager& textures) {
                 new Buffer<vec3>(GL_ARRAY_BUFFER, curVertices),
                 new Buffer<vec2>(GL_ARRAY_BUFFER, curTexCoords),
                 new Buffer<vec3>(GL_ARRAY_BUFFER, curNormals)
+            );
+        } else if (!curTexCoords.empty()) {
+            if (curVertices.size() != curTexCoords.size())
+                error("Inconsistent faces");  
+            parts.emplace_back(
+                curMaterial,
+                new Buffer<vec3>(GL_ARRAY_BUFFER, curVertices),
+                new Buffer<vec2>(GL_ARRAY_BUFFER, curTexCoords),
+                nullptr
             );
         } else {
             if (curVertices.size() != curNormals.size())
@@ -228,8 +238,19 @@ void OBJ::load(std::string const& filename, TextureManager& textures) {
                 curNormals.push_back(normals.at(vn1 - 1));
                 curNormals.push_back(normals.at(vn2 - 1));
                 curNormals.push_back(normals.at(vn3 - 1));
+            } else if (sscanf(line.c_str(), "f %d/%d %d/%d %d/%d",
+                        &v1, &vt1, &v2, &vt2, &v3, &vt3)) {
+                // No normals given
+
+                curVertices.push_back(vertices.at(v1 - 1)); 
+                curVertices.push_back(vertices.at(v2 - 1)); 
+                curVertices.push_back(vertices.at(v3 - 1)); 
+
+                curTexCoords.push_back(texCoords.at(vt1 - 1));
+                curTexCoords.push_back(texCoords.at(vt2 - 1));
+                curTexCoords.push_back(texCoords.at(vt3 - 1));
             } else {
-                error("Invalid face");
+                error("Unrecognized face format");
             }
         }
 

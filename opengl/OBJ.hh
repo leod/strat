@@ -7,7 +7,7 @@
 #include <map>
 #include <memory>
 #include <vector>
-#include <list>
+#include <vector>
 
 namespace opengl {
 
@@ -41,7 +41,7 @@ struct OBJ {
         Part(Material, Buffer<glm::vec3>*, Buffer<glm::vec2>*, Buffer<glm::vec3>*); 
     };
 
-    std::list<Part> parts;
+    std::vector<Part> parts;
 
     OBJ(std::string const& filename, TextureManager&);
 

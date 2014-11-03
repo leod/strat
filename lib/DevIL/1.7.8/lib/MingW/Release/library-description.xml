@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pack>
+	<main>
+		<dependencies>
+			<dependency>
+				<libraries>
+					<path>.</path>
+				</libraries>
+			</dependency>
+		</dependencies>
+	</main>
+	<descriptions>
+		<library name="IL" type="shared" path="."  full-name="DevIL.dll" compile-name="DevIL" />
+		<library name="ILU" type="shared" path="."  full-name="ILU.dll" compile-name="ILU" />
+		<library name="ILUT" type="shared" path="."  full-name="ILUT.dll" compile-name="ILUT" />
+	</descriptions>
+</pack>

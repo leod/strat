@@ -129,13 +129,54 @@ void RenderResourceTransferSystem::render(entityx::EntityManager &entities) {
         glPushMatrix();
         glTranslatef(dda.x, dda.y, dda.z);
         glTranslatef(-0.5f, -0.5f, 0.0f);
-        //glm::vec3 color(1.0, 0.0, 1.0);
         glm::vec3 color(r->color);
         glBegin(GL_QUADS);
         glColor4f(color.x, color.y, color.z, 1.0f);
         drawCube();
         glEnd();
         glPopMatrix();
+    }
+
+    glEnable(GL_CULL_FACE);
+}
+
+void RenderTreeSystem::render(entityx::EntityManager &entities) {
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_TEXTURE_2D);
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
+    for (auto &part : treeObj.parts) {
+
+        glEnableClientState(GL_VERTEX_ARRAY); // oldschool yo
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+        assert(part.material.texture);
+        part.material.texture->bind();
+
+        part.vertices->bind();
+        glVertexPointer(3, GL_FLOAT, sizeof(GLfloat)*3, nullptr);
+
+        part.texCoords->bind();
+        glTexCoordPointer(3, GL_FLOAT, sizeof(GLfloat)*3, nullptr);
+
+        //std::cout << treeObj.parts[0].vertices->getNumElements() << std::endl;
+
+        Tree::Handle tree;
+        for (auto entity : entities.entities_with_components(tree)) {
+            glm::vec3 p(tree->getPosition());
+
+            glPushMatrix();
+            glTranslatef(p.x, p.y, p.z);
+            glTranslatef(0, 0, 3);
+            glDrawArrays(GL_TRIANGLES, 0, part.vertices->getNumElements());
+            glPopMatrix();
+        }
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        glDisableClientState(GL_VERTEX_ARRAY);
+        glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
     glEnable(GL_CULL_FACE);
@@ -185,10 +226,8 @@ void setupGraphics(const Config &config, const View &view) {
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
-    
 
-    //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-    //
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
 
 void drawCursor(const Map &map, const View &view) {

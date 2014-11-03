@@ -62,9 +62,11 @@ void Client::update(double dt) {
     if (tickRunning && interp.isTickDone()) {
         tickRunning = false;
 
+        // Inform the server that we have completed a tick
         Message message(Message::CLIENT_TICK_DONE);
         sendMessage(message);
 
+        // Start queued tick if we already received one
         if (haveQueuedTick) {
             sim->runTick(queuedOrders);
             interp.startTick();
@@ -73,8 +75,8 @@ void Client::update(double dt) {
         }
     }
 
-    if (!tickRunning)
-        std::cout << "WAITING FOR TICK" << std::endl;
+    /*if (!tickRunning)
+        std::cout << "WAITING FOR TICK" << std::endl;*/
 
     ENetEvent event;
     while (enet_host_service(client, &event, 0) > 0) {

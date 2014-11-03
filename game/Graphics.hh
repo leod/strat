@@ -10,6 +10,8 @@
 #include <GL/glew.h>
 
 #include "Input.hh"
+#include "opengl/OBJ.hh"
+#include "opengl/TextureManager.hh"
 
 struct Map;
 struct InterpState;
@@ -39,6 +41,18 @@ struct RenderResourceTransferSystem {
 private:
     const Map &map;
     const InterpState &interp;
+};
+
+struct RenderTreeSystem {
+    RenderTreeSystem(const Map &map, opengl::TextureManager &textures)
+        : map(map), treeObj("data/tree/tree.obj", textures) {}
+
+    void render(entityx::EntityManager &entities);
+
+private:
+    const Map &map;
+
+    opengl::OBJ treeObj;
 };
 
 void setupGraphics(const Config &, const View &);
