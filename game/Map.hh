@@ -13,19 +13,26 @@ struct GridPoint {
     size_t height;
 
     // Progress of heightening
-    bool isGrowing;
-    Fixed growthProgress; // 0 <= heightProgress <= 1
+    size_t growthTarget;
+    Fixed growthProgress; // 0 <= growthProgress <= growthTarget
+    bool growthCascade;
 
     entityx::Entity entity;
 
     Fixed water;
 
     GridPoint()
-        : height(0), isGrowing(false), growthProgress(0), entity(), water(0) {
+        : height(0),
+          growthTarget(0), growthProgress(0),
+          growthCascade(false),
+          entity(),
+          water(0) {
     }
 
     bool usable() const {
-        return !isGrowing &&
+        assert(growthTarget != 0 || growthProgress == Fixed(0));
+
+        return growthTarget == 0 &&
                !entity &&
                water == Fixed(0);
     }
@@ -83,9 +90,13 @@ struct Map {
         assert(isPoint(p));
 
         if (p.y > 0) f(point(p.x, p.y-1));
+        if (p.y < sizeY - 1) f(point(p.x, p.y+1));
+        if (p.x > 0) f(point(p.x-1, p.y));
+        if (p.x < sizeX - 1) f(point(p.x+1, p.y));
+        if (p.x > 0 && p.y > 0) f(point(p.x-1, p.y-1));
+        if (p.x > 0 && p.y < sizeY-1) f(point(p.x-1, p.y+1));
         if (p.x < sizeX-1 && p.y > 0) f(point(p.x+1, p.y-1));
         if (p.x < sizeX-1 && p.y < sizeY-1) f(point(p.x+1, p.y+1));
-        if (p.x > 0 && p.y < sizeY-1) f(point(p.x-1, p.y+1));
     }
 
     template<typename F>
