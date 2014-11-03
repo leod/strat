@@ -10,7 +10,11 @@ LIBS_SERVER=-lglfw3 -lgdi32 -lenet -lws2_32 -lwinmm
 SRCS_COMMON=common/BitStream.cc common/Defs.cc common/GameSettings.cc common/Message.cc common/Order.cc
 OBJS_COMMON=$(subst .cc,.o,$(SRCS_COMMON))
 
-SRCS_GAME=game/Client.cc game/Graphics.cc game/Main.cc game/Map.cc game/Math.cc game/Sim.cc game/SimState.cc game/SimSystems.cc game/InterpState.cc game/Input.cc game/Terrain.cc
+SRCS_OPENGL=opengl/Buffer.cc opengl/Error.cc opengl/Framebuffer.cc opengl/OBJ.cc opengl/Program.cc opengl/ProgramManager.cc opengl/Shader.cc opengl/Texture.cc opengl/TextureManager.cc
+
+SRCS_UTIL=util/Log.cc util/Print.cc
+
+SRCS_GAME=game/Client.cc game/Graphics.cc game/Main.cc game/Map.cc game/Math.cc game/Sim.cc game/SimState.cc game/SimSystems.cc game/InterpState.cc game/Input.cc game/Terrain.cc $(SRCS_OPENGL) $(SRCS_UTIL)
 OBJS_GAME=$(subst .cc,.o,$(SRCS_GAME))
 
 SRCS_SERVER=server/Server.cc
