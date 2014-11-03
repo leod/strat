@@ -94,20 +94,27 @@ int main(int argc, char *argv[]) {
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        input.update(dt);
-        client.update(dt);
+        {
+            input.update(dt);
+            client.update(dt);
+        }
 
-        setupGraphics(config, view);
-        //terrainMesh.update();
-        terrainMesh.draw();
-        
-        renderBuildingSystem.render(sim.getEntities());
-        renderResourceTransferSystem.render(sim.getEntities());
-        renderTreeSystem.render(sim.getEntities());
-        
-        drawCursor(map, view);
 
-        glfwSwapBuffers(window);
+        {
+            setupGraphics(config, view);
+            //terrainMesh.update();
+            terrainMesh.draw();
+        
+            renderBuildingSystem.render(sim.getEntities());
+            renderResourceTransferSystem.render(sim.getEntities());
+            renderTreeSystem.render(sim.getEntities());
+
+            drawCursor(map, view);
+
+            glfwSwapBuffers(window);
+        }
+        
+
         glfwPollEvents();
 
         frames++;

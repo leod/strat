@@ -35,7 +35,7 @@ Shader* ProgramManager::loadShader(GLint type, std::string const& filename) {
     auto shaderIt = shaders.find(filename);
     if (shaderIt != shaders.end()) {
         assert(shaderIt->second->getType() == type &&
-               "file was loaded twice with different types.");
+               "File was loaded twice with different types.");
         return shaderIt->second.get();
     } 
 

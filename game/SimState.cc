@@ -37,7 +37,7 @@ SimState::SimState(const GameSettings &settings)
     }
 
     // Generate some trees
-    size_t numTrees = 50;
+    size_t numTrees = 500;
 
     for (size_t i = 0; i < numTrees; i++) {
         size_t x, y;
@@ -212,22 +212,24 @@ void SimState::addResourceTransfer(Entity fromEntity, Entity toEntity,
     // For now: start and end in the middle of the top of the buildings
     // These positions are used to calculate the distance of the transfer,
     // and for rendering.
-    fvec3 fromPosition(fromBuilding->getPosition());
-    fvec3 toPosition(toBuilding->getPosition());
+    fvec3 fromPosition(fromBuilding->getPosition()),
+          toPosition(toBuilding->getPosition());
 
-    fromPosition += fvec3(Fixed(fromBuilding->getTypeInfo().size.x) / Fixed(2),
-                          Fixed(fromBuilding->getTypeInfo().size.y) / Fixed(2),
-                          Fixed(fromBuilding->getTypeInfo().size.z));
-    toPosition += fvec3(Fixed(toBuilding->getTypeInfo().size.x) / Fixed(2),
-                        Fixed(toBuilding->getTypeInfo().size.y) / Fixed(2),
-                        Fixed(toBuilding->getTypeInfo().size.z));
+    BuildingTypeInfo &fromTi(fromBuilding->getTypeInfo()),
+                     &toTi(toBuilding->getTypeInfo());
+
+    fromPosition += fvec3(Fixed(fromTi.size.x) / Fixed(2),
+                          Fixed(fromTi.size.y) / Fixed(2),
+                          Fixed(fromTi.size.z));
+    toPosition += fvec3(Fixed(toTi.size.x) / Fixed(2),
+                        Fixed(toTi.size.y) / Fixed(2),
+                        Fixed(toTi.size.z));
 
     entityx::Entity entity = entities.create();
     entity.assign<GameObject>(PLAYER_NEUTRAL, ++entityCounter);
     entity.assign<ResourceTransfer>(fromEntity, toEntity,
                                     fromPosition, toPosition,
-                                    resource,
-                                    amount);
+                                    resource, amount);
 }
 
 void SimState::raiseWaterLevel() {

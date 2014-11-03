@@ -143,12 +143,13 @@ void RenderResourceTransferSystem::render(entityx::EntityManager &entities) {
 void RenderTreeSystem::render(entityx::EntityManager &entities) {
     glDisable(GL_CULL_FACE);
     glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
     for (auto &part : treeObj.parts) {
-
-        glEnableClientState(GL_VERTEX_ARRAY); // oldschool yo
+        glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        glEnableClientState(GL_NORMAL_ARRAY);
 
         assert(part.material.texture);
         part.material.texture->bind();
@@ -157,7 +158,10 @@ void RenderTreeSystem::render(entityx::EntityManager &entities) {
         glVertexPointer(3, GL_FLOAT, sizeof(GLfloat)*3, nullptr);
 
         part.texCoords->bind();
-        glTexCoordPointer(3, GL_FLOAT, sizeof(GLfloat)*3, nullptr);
+        glTexCoordPointer(2, GL_FLOAT, sizeof(GLfloat)*2, nullptr);
+
+        part.normals->bind();
+        glNormalPointer(GL_FLOAT, sizeof(GLfloat)*3, nullptr);
 
         //std::cout << treeObj.parts[0].vertices->getNumElements() << std::endl;
 
@@ -167,7 +171,8 @@ void RenderTreeSystem::render(entityx::EntityManager &entities) {
 
             glPushMatrix();
             glTranslatef(p.x, p.y, p.z);
-            glTranslatef(0, 0, 3);
+            glScalef(1.5, 1.5, 1.5);
+            glRotatef(90, 1, 0, 0);
             glDrawArrays(GL_TRIANGLES, 0, part.vertices->getNumElements());
             glPopMatrix();
         }
@@ -176,6 +181,7 @@ void RenderTreeSystem::render(entityx::EntityManager &entities) {
 
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+        glDisableClientState(GL_NORMAL_ARRAY);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 

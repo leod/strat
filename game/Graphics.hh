@@ -45,7 +45,7 @@ private:
 
 struct RenderTreeSystem {
     RenderTreeSystem(const Map &map, opengl::TextureManager &textures)
-        : map(map), treeObj("data/tree/tree.obj", textures) {}
+        : map(map), treeObj("data/tree/untitled.obj", textures) {}
 
     void render(entityx::EntityManager &entities);
 

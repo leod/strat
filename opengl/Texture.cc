@@ -38,11 +38,18 @@ Texture::Texture(std::string const& filename) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
     /*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-            GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
             GL_LINEAR_MIPMAP_LINEAR);*/
-    /*gluBuild2DMipmaps(GL_TEXTURE_2D, 4, width, height,
-                      GL_RGBA, GL_UNSIGNED_BYTE, ilGetData()); */
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+            GL_LINEAR_MIPMAP_LINEAR);
+
+    //glGenerateMipmap(0);
+    gluBuild2DMipmaps(GL_TEXTURE_2D,
+                      ilGetInteger(IL_IMAGE_BPP),
+                      ilGetInteger(IL_IMAGE_WIDTH),
+                      ilGetInteger(IL_IMAGE_HEIGHT),
+                      ilGetInteger(IL_IMAGE_FORMAT),
+                      GL_UNSIGNED_BYTE,
+                      ilGetData());
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
