@@ -42,7 +42,7 @@ private:
     SimState state;
 
     MinerBuildingSystem minerBuildingSystem;
-    ResourceTransferSystem resourceTransferSystem;
+    FlyingObjectSystem flyingObjectSystem;
 };
 
 #endif

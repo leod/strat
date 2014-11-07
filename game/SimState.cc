@@ -231,9 +231,8 @@ void SimState::addResourceTransfer(Entity fromEntity, Entity toEntity,
 
     entityx::Entity entity = entities.create();
     entity.assign<GameObject>(PLAYER_NEUTRAL, ++entityCounter);
-    entity.assign<ResourceTransfer>(fromEntity, toEntity,
-                                    fromPosition, toPosition,
-                                    resource, amount);
+    entity.assign<FlyingObject>(fromPosition, toPosition);
+    entity.assign<FlyingResource>(resource, amount);
 }
 
 void SimState::raiseWaterLevel() {

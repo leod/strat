@@ -27,23 +27,33 @@ void MinerBuildingSystem::tick(SimState &state) {
     }
 }
 
-void ResourceTransferSystem::tick(SimState &state) {
+void FlyingObjectSystem::tick(SimState &state) {
     Fixed distancePerSecond(5);
 
-    ResourceTransfer::Handle resourceTransfer;
-    for (auto entity : state.entities.entities_with_components(resourceTransfer)) {
-        if (resourceTransfer->progress <= Fixed(1)) { 
-            resourceTransfer->lastProgress = resourceTransfer->progress;
+    FlyingObject::Handle flyingObject;
+    for (auto entity : state.entities.entities_with_components(flyingObject)) {
+        if (flyingObject->progress <= Fixed(1)) { 
+            flyingObject->lastProgress = flyingObject->progress;
 
-            Fixed progressPerSecond = distancePerSecond / resourceTransfer->distance;
-            resourceTransfer->progress += state.getTickLengthS() * progressPerSecond;
+            Fixed progressPerSecond = distancePerSecond / flyingObject->distance;
+            flyingObject->progress += state.getTickLengthS() * progressPerSecond;
 
-            if (resourceTransfer->progress > Fixed(1)) {
+            if (flyingObject->progress > Fixed(1)) {
                 state.entities.destroy(entity.id());
                 continue;
             }
         }
 
-        //std::cout << (float)resourceTransfer->progress << std::endl;
+        //std::cout << (float)flyingObject->progress << std::endl;
+    }
+}
+
+void FlyingResourceSystem::configure(entityx::EventManager &events) {
+
+}
+
+void FlyingResourceSystem::receive(const FlyingObjectLanded &event) {
+    if (auto resource = event.entity.component<FlyingResource>()) {
+            
     }
 }

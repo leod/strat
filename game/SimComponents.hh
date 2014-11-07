@@ -20,8 +20,8 @@ struct GameObject : entityx::Component<GameObject> {
     ObjectId getId() const { return id; }
 
 private:
-    const PlayerId owner;
-    const ObjectId id;
+    PlayerId owner;
+    ObjectId id;
 };
 
 struct Building : entityx::Component<Building> {
@@ -67,36 +67,30 @@ private:
     glm::uvec3 position;
 };
 
-class ResourceTransfer : public entityx::Component<ResourceTransfer> {
+struct FlyingObjectLanded : public entityx::Event<FlyingObjectLanded> {
+    entityx::Entity entity; 
+
+    FlyingObjectLanded(entityx::Entity entity)
+        : entity(entity) {
+    }
+};
+
+struct FlyingObject : public entityx::Component<FlyingObject> {
+private:
     Fixed lastProgress; // e.g. for interpolation
     Fixed progress;
 
 public:
-    friend struct ResourceTransferSystem;
-
-    const Entity fromEntity;
-    const Entity toEntity;
+    friend struct FlyingObjectSystem;
 
     const fvec3 fromPosition;
     const fvec3 toPosition;
-    const ResourceType resource;
-    const size_t amount;
     const Fixed distance;
 
-    const glm::vec3 color;
-
-    ResourceTransfer(Entity fromEntity, Entity toEntity,
-                     fvec3 fromPosition, fvec3 toPosition,
-                     ResourceType resource,
-                     size_t amount)
+    FlyingObject(fvec3 fromPosition, fvec3 toPosition)
         : lastProgress(0), progress(0),
-          fromEntity(fromEntity),
-          toEntity(toEntity),
           fromPosition(fromPosition), toPosition(toPosition),
-          resource(resource),
-          amount(amount),
-          distance(manhattanDistance(fromPosition, toPosition)),
-          color(randomFloat(), randomFloat(), randomFloat()) {
+          distance(manhattanDistance(fromPosition, toPosition)) {
         assert(distance > Fixed(0));
     }
 
@@ -104,12 +98,25 @@ public:
     Fixed getLastProgress() const { return lastProgress; }
 };
 
+struct FlyingResource : public entityx::Component<FlyingResource> {
+    const ResourceType resource;
+    const size_t amount;
+
+    const glm::vec3 color;
+
+    FlyingResource(ResourceType resource, size_t amount)
+        : resource(resource),
+          amount(amount),
+          color(randomFloat(), randomFloat(), randomFloat()) {
+    }
+};
+
 struct BuildingCreated : public entityx::Event<BuildingCreated> {
+    entityx::Entity entity;
+
     BuildingCreated(entityx::Entity entity)
         : entity(entity) {
     }
-
-    entityx::Entity entity;
 };
 
 #endif

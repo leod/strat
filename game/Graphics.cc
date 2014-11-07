@@ -100,14 +100,13 @@ void RenderBuildingSystem::render(entityx::EntityManager &entities) {
 void RenderBuildingSystem::receive(const BuildingCreated &event) {
 }
 
-void RenderResourceTransferSystem::render(entityx::EntityManager &entities) {
+void RenderFlyingResourceSystem::render(entityx::EntityManager &entities) {
     glDisable(GL_CULL_FACE);
 
-    ResourceTransfer::Handle r;
-    for (auto entity : entities.entities_with_components(r)) {
+    FlyingObject::Handle r;
+    FlyingResource::Handle resource;
+    for (auto entity : entities.entities_with_components(r, resource)) {
         glm::vec3 a(r->fromPosition), b(r->toPosition);
-        a.z = a.z ;
-        b.z = b.z ;
 
         // Bezier interpolation
         glm::vec3 m((a.x + b.x) * 0.5,
@@ -129,7 +128,7 @@ void RenderResourceTransferSystem::render(entityx::EntityManager &entities) {
         glPushMatrix();
         glTranslatef(dda.x, dda.y, dda.z);
         glTranslatef(-0.5f, -0.5f, 0.0f);
-        glm::vec3 color(r->color);
+        glm::vec3 color(resource->color);
         glBegin(GL_QUADS);
         glColor4f(color.x, color.y, color.z, 1.0f);
         drawCube();
@@ -244,7 +243,7 @@ void drawCursor(const Map &map, const View &view) {
     float ty = view.cursor.y;
     float tz = map.point(view.cursor).height + dz;
 
-    float s = 0.5f;
+    float s = 0.2f;
 
     if (!view.hasMapRectangle) {
         glBegin(GL_QUADS);

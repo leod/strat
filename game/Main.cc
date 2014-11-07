@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
     TerrainMesh terrainMesh(map, Map::Pos(16, 16));
 
     RenderBuildingSystem renderBuildingSystem(map);
-    RenderResourceTransferSystem renderResourceTransferSystem(map, interp);
+    RenderFlyingResourceSystem renderFlyingResourceSystem(map, interp);
     RenderTreeSystem renderTreeSystem(map, textures);
 
     Input input(window, client, terrainMesh);
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
             terrainMesh.drawWater();
         
             renderBuildingSystem.render(sim.getEntities());
-            renderResourceTransferSystem.render(sim.getEntities());
+            renderFlyingResourceSystem.render(sim.getEntities());
             renderTreeSystem.render(sim.getEntities());
 
             drawCursor(map, view);

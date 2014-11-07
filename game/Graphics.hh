@@ -32,8 +32,8 @@ private:
     const Map &map;
 };
 
-struct RenderResourceTransferSystem {
-    RenderResourceTransferSystem(const Map &map, const InterpState &interp)
+struct RenderFlyingResourceSystem {
+    RenderFlyingResourceSystem(const Map &map, const InterpState &interp)
         : map(map), interp(interp) {}
 
     void render(entityx::EntityManager &entities);

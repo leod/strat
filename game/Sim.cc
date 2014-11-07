@@ -16,8 +16,9 @@ void Sim::runTick(const std::vector<Order> &orders) {
 
     state.getMap().tick(state.getTickLengthS());
     state.waterTick();
+
     minerBuildingSystem.tick(state);
-    resourceTransferSystem.tick(state);
+    flyingObjectSystem.tick(state);
 }
 
 const SimState &Sim::getState() const {
