@@ -15,6 +15,7 @@ struct TerrainMesh {
 
     void update();
     void draw();
+    void drawWater();
 
     bool intersectWithRay(const Ray &ray, Map::Pos &point, float &t) const;
 

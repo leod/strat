@@ -37,7 +37,7 @@ SimState::SimState(const GameSettings &settings)
     }
 
     // Generate some trees
-    size_t numTrees = 500;
+    size_t numTrees = 20;
 
     for (size_t i = 0; i < numTrees; i++) {
         size_t x, y;
@@ -112,9 +112,13 @@ entityx::Entity SimState::findClosestBuilding(BuildingType type,
 }
 
 void SimState::placeTree(const glm::uvec2 &p) {
+    assert(map.point(p).usable());
+
     entityx::Entity entity = entities.create();
     entity.assign<GameObject>(PLAYER_NEUTRAL, ++entityCounter);
     entity.assign<Tree>(glm::uvec3(p.x, p.y, map.point(p.x, p.y).height));
+
+    map.point(p).entity = entity;
 }
 
 bool SimState::isOrderValid(const Order &order) const {

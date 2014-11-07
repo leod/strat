@@ -171,7 +171,7 @@ void RenderTreeSystem::render(entityx::EntityManager &entities) {
 
             glPushMatrix();
             glTranslatef(p.x, p.y, p.z);
-            glScalef(1.5, 1.5, 1.5);
+            glScalef(0.35, 0.35, 0.35);
             glRotatef(90, 1, 0, 0);
             glDrawArrays(GL_TRIANGLES, 0, part.vertices->getNumElements());
             glPopMatrix();

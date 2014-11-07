@@ -2,6 +2,7 @@
 #include "Math.hh"
 
 #include <limits>
+#include <cmath>
 #include <iostream>
 #include <cmath>
 #include <GL/glu.h>
@@ -28,6 +29,7 @@ struct TerrainPatch {
     void init();
     void update();
     void draw();
+    void drawWater();
 
     bool intersectWithRay(const Ray &ray, Map::Pos &point, float &t) const;
 
@@ -77,26 +79,51 @@ void TerrainPatch::update() {
             // Two triangles per grid point
 
             glm::vec3 a(POINT(x,y)), b(POINT(x+1,y)),
-                      c(POINT(x,y+1)), d(POINT(x+1,y+1));
+                      c(POINT(x+1,y+1)), d(POINT(x,y+1));
 
-            glm::vec3 n1(glm::normalize(glm::cross(a - d, b - d)));
-            glm::vec3 n2(glm::normalize(glm::cross(c - d, a - d)));
+            glm::vec3 va1, vb1, vc1, // first triangle
+                      va2, vb2, vc2; // second triangle
 
-            Vertex va1(a, color(a.z), n1);
-            Vertex vb1(b, color(b.z), n1);
-            Vertex vc1(d, color(d.z), n1);
+            if (fabs(a.z - c.z) > fabs(b.z - d.z)) {
+                // a---b
+                // |  /|
+                // | / |
+                // |/  |
+                // d---c
 
-            Vertex va2(d, color(d.z), n2);
-            Vertex vb2(c, color(c.z), n2);
-            Vertex vc2(a, color(a.z), n2);
+                va1 = a;
+                vb1 = b;
+                vc1 = d;
 
-            vertices.push_back(va1);
-            vertices.push_back(vb1);
-            vertices.push_back(vc1);
+                va2 = b;
+                vb2 = c;
+                vc2 = d;
+            } else {
+                // a---b
+                // |\  |
+                // | \ |
+                // |  \|
+                // d---c
 
-            vertices.push_back(va2);
-            vertices.push_back(vb2);
-            vertices.push_back(vc2);
+                va1 = a;
+                vb1 = b;
+                vc1 = c;
+
+                va2 = c;
+                vb2 = d;
+                vc2 = a;
+            }
+
+            glm::vec3 n1(glm::normalize(glm::cross(vb1 - va1, vc1 - va1)));
+            glm::vec3 n2(glm::normalize(glm::cross(vb2 - va2, vc2 - va2)));
+
+            vertices.emplace_back(va1, color(va1.z), n1);
+            vertices.emplace_back(vb1, color(vb1.z), n1);
+            vertices.emplace_back(vc1, color(vc1.z), n1);
+
+            vertices.emplace_back(va2, color(va2.z), n2);
+            vertices.emplace_back(vb2, color(vb2.z), n2);
+            vertices.emplace_back(vc2, color(vc2.z), n2);
         }
     }
     
@@ -127,74 +154,6 @@ void TerrainPatch::draw() {
     glDisableClientState(GL_NORMAL_ARRAY);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    // Water test
-    glShadeModel(GL_FLAT);
-    glBegin(GL_TRIANGLES);
-    for (size_t x = position.x; x < position.x + size.x; x++) {
-        for (size_t y = position.y; y < position.y + size.y; y++) {
-            glm::vec3 a(POINT(x,y)), b(POINT(x+1,y)),
-                      c(POINT(x,y+1)), d(POINT(x+1,y+1));
-            float dz = 0.01;
-            a.z += dz + map.point(x,y).water;
-            b.z += dz + map.point(x+1,y).water;
-            c.z += dz + map.point(x,y+1).water;
-            d.z += dz + map.point(x+1,y+1).water;
-
-            float ca = map.point(x,y).water > 1 ? 1 : map.point(x,y).water;
-            float cb = map.point(x+1,y).water > 1 ? 1 : map.point(x+1,y).water;
-            float cc = map.point(x,y+1).water > 1 ? 1 : map.point(x,y+1).water;
-            float cd = map.point(x+1,y+1).water > 1 ? 1 : map.point(x+1,y+1).water;
-
-#define ALPHA(x) (0.40f + sin(x)/2)
-
-            /*glNormal3f(0,0,1);
-            glColor4f(0.0f, 0.2f, 0.5f, ALPHA(cd));
-            glVertex3f(POINT(x,y).x, POINT(x,y).y, POINT(x,y).z);
-            glVertex3f(POINT(x,y).x, POINT(x,y).y, a.z);
-            continue;*/
-
-            float minw = 0.1;
-
-            if (map.point(x+1,y+1).water > minw || map.point(x+1,y).water > minw ||
-                map.point(x,y).water > minw) {
-                glm::vec3 n1(glm::normalize(glm::cross(a - d, b - d)));
-                glNormal3f(n1.x, n1.y, n1.z);
-
-                glColor4f(0.0f, 0.2f, 0.5f, ALPHA((cd + cb + ca) / 3));
-                glVertex3f(a.x, a.y, a.z);
-                //glColor4f(0.0f, 0.2f, 0.5f, ALPHA(cb));
-                glVertex3f(b.x, b.y, b.z);
-                glVertex3f(d.x, d.y, d.z);
-                //glColor4f(0.0f, 0.2f, 0.5f, ALPHA(ca));
-
-                /*glm::vec3 n2(glm::normalize(glm::cross(c - d, a - d)));
-                glNormal3f(n2.x, n2.y, n2.z);
-
-                glColor4f(0.0f, 0.2f, 0.5f, ALPHA((ca + cc + cd) / 3));
-                glVertex3f(a.x, a.y, a.z);
-                //glColor4f(0.0f, 0.2f, 0.5f, ALPHA(cc));
-                glVertex3f(c.x, c.y, c.z);
-                //glColor4f(0.0f, 0.2f, 0.5f, ALPHA(cd));
-                glVertex3f(d.x, d.y, d.z);*/
-            }
-            
-            if (map.point(x,y).water > minw || map.point(x,y+1).water > minw ||
-                map.point(x+1,y+1).water > minw) {
-                glm::vec3 n2(glm::normalize(glm::cross(c - d, a - d)));
-                glNormal3f(n2.x, n2.y, n2.z);
-
-                glColor4f(0.0f, 0.2f, 0.5f, ALPHA((ca + cc + cd) / 3));
-                glVertex3f(d.x, d.y, d.z);
-                //glColor4f(0.0f, 0.2f, 0.5f, ALPHA(cc));
-                glVertex3f(c.x, c.y, c.z);
-                glVertex3f(a.x, a.y, a.z);
-                //glColor4f(0.0f, 0.2f, 0.5f, ALPHA(cd));
-            }
-
-        }
-    }
-    glEnd();
-    glShadeModel(GL_SMOOTH);
 }
 
 bool TerrainPatch::intersectWithRay(const Ray &ray, Map::Pos &point,
@@ -229,6 +188,58 @@ bool TerrainPatch::intersectWithRay(const Ray &ray, Map::Pos &point,
 #undef ROUND
 }
 
+void TerrainPatch::drawWater() {
+    // Water test
+    glShadeModel(GL_FLAT);
+    glBegin(GL_TRIANGLES);
+    for (size_t x = position.x; x < position.x + size.x; x++) {
+        for (size_t y = position.y; y < position.y + size.y; y++) {
+            glm::vec3 a(POINT(x,y)), b(POINT(x+1,y)),
+                      c(POINT(x,y+1)), d(POINT(x+1,y+1));
+            float dz = 0.01;
+            a.z += dz + map.point(x,y).water;
+            b.z += dz + map.point(x+1,y).water;
+            c.z += dz + map.point(x,y+1).water;
+            d.z += dz + map.point(x+1,y+1).water;
+
+            float ca = map.point(x,y).water > 1 ? 1 : map.point(x,y).water;
+            float cb = map.point(x+1,y).water > 1 ? 1 : map.point(x+1,y).water;
+            float cc = map.point(x,y+1).water > 1 ? 1 : map.point(x,y+1).water;
+            float cd = map.point(x+1,y+1).water > 1 ? 1 : map.point(x+1,y+1).water;
+
+#define ALPHA(x) (0.40f + sin(x)/2)
+
+            float minw = 0.1;
+
+            if (map.point(x+1,y+1).water > minw || map.point(x+1,y).water > minw ||
+                map.point(x,y).water > minw) {
+                glm::vec3 n1(glm::normalize(glm::cross(a - d, b - d)));
+                glNormal3f(n1.x, n1.y, n1.z);
+
+                glColor4f(0.0f, 0.2f, 0.5f, ALPHA((cd + cb + ca) / 3));
+                glVertex3f(a.x, a.y, a.z);
+                glVertex3f(b.x, b.y, b.z);
+                glVertex3f(d.x, d.y, d.z);
+            }
+            
+            if (map.point(x,y).water > minw || map.point(x,y+1).water > minw ||
+                map.point(x+1,y+1).water > minw) {
+                glm::vec3 n2(glm::normalize(glm::cross(c - d, a - d)));
+                glNormal3f(n2.x, n2.y, n2.z);
+
+                glColor4f(0.0f, 0.2f, 0.5f, ALPHA((ca + cc + cd) / 3));
+                glVertex3f(d.x, d.y, d.z);
+                glVertex3f(c.x, c.y, c.z);
+                glVertex3f(a.x, a.y, a.z);
+            }
+
+        }
+    }
+    glEnd();
+    glShadeModel(GL_SMOOTH);
+#undef ALPHA
+}
+
 glm::vec3 TerrainPatch::color(size_t height) const {
     float t = (float)height / map.getMaxHeight(); 
     float b = 0.3 + t / 3;
@@ -259,6 +270,11 @@ void TerrainMesh::update() {
 void TerrainMesh::draw() {
     for (auto patch : patches)
         patch->draw();
+}
+
+void TerrainMesh::drawWater() {
+    for (auto patch : patches)
+        patch->drawWater();
 }
 
 bool TerrainMesh::intersectWithRay(const Ray &ray, Map::Pos &point, float &tMin) const {

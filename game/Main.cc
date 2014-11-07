@@ -97,13 +97,13 @@ int main(int argc, char *argv[]) {
         {
             input.update(dt);
             client.update(dt);
+            terrainMesh.update();
         }
-
 
         {
             setupGraphics(config, view);
-            //terrainMesh.update();
             terrainMesh.draw();
+            terrainMesh.drawWater();
         
             renderBuildingSystem.render(sim.getEntities());
             renderResourceTransferSystem.render(sim.getEntities());
@@ -113,7 +113,6 @@ int main(int argc, char *argv[]) {
 
             glfwSwapBuffers(window);
         }
-        
 
         glfwPollEvents();
 
