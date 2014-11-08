@@ -126,11 +126,11 @@ int main() {
     settings.randomSeed = static_cast<uint32_t>(time(NULL));
     settings.mapW = 256;
     settings.mapH = 256;
-    settings.heightLimit = 35;
+    settings.heightLimit = 25;
     settings.tickLengthMs = 50;
 
     // Wait for this number of players before starting the game
-    size_t numWaitPlayers = 2;
+    size_t numWaitPlayers = 1;
 
     ENetAddress address;
     address.host = ENET_HOST_ANY;

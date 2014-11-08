@@ -243,7 +243,7 @@ void TerrainPatch::drawWater() {
 glm::vec3 TerrainPatch::color(size_t height) const {
     float t = (float)height / map.getMaxHeight(); 
     float b = 0.3 + t / 3;
-    return glm::vec3(b, b, b);
+    return glm::vec3(205.0f / 255, 133.0f / 255, 63.0f / 255);
 }
 
 TerrainMesh::TerrainMesh(const Map &map, const Map::Pos &patchSize)
