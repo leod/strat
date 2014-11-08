@@ -130,7 +130,7 @@ int main() {
     settings.tickLengthMs = 50;
 
     // Wait for this number of players before starting the game
-    size_t numWaitPlayers = 1;
+    size_t numWaitPlayers = 2;
 
     ENetAddress address;
     address.host = ENET_HOST_ANY;

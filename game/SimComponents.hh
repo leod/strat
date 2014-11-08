@@ -43,6 +43,12 @@ private:
     glm::uvec3 position;
 };
 
+struct MainBuilding : entityx::Component<MainBuilding> {
+
+private:
+    std::vector<entityx::Entity> buildQueue;
+};
+
 struct MinerBuilding : entityx::Component<MinerBuilding> {
     friend struct MinerBuildingSystem;
 
