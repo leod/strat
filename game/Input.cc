@@ -10,6 +10,8 @@
 #include <glm/gtx/rotate_vector.hpp>
 #include <inline_variant_visitor/inline_variant.hpp>
 
+#define DOUBLE_CLICK_S 0.4f
+
 using namespace glm;
 
 // GLFW does not allow setting a context for callbacks,
@@ -191,7 +193,7 @@ void Input::onMouseButton(GLFWwindow *window,
                     if (entityx::Entity entity = self->pickEntity()) {
                         // If it's a building, switch mode
                         if (entity.has_component<Building>()) {
-                            self->mode = Input::BuildingSelectedMode(entity);
+                            self->mode = Input::BuildingSelectedMode(entity, glfwGetTime());
                         }
                     } else { // Click on the map
                         self->mode = Input::MapSelectionMode(self->cursor);
@@ -204,12 +206,28 @@ void Input::onMouseButton(GLFWwindow *window,
                     // Click on an entity?
                     if (entityx::Entity entity = self->pickEntity()) {
                         if (entity.has_component<Building>()) {
+                            std::vector<entityx::Entity> selection(1, entity);
+
+                            entityx::Entity lastEntity(mode.entities.back());
+
+                            // Double click selection
+                            if (lastEntity == entity
+                                && glfwGetTime() - mode.lastSelectionTime <= DOUBLE_CLICK_S) {
+                                GameObject::Handle gameObject;
+                                Building::Handle building;
+                                for (auto entity :
+                                        self->sim.getEntities().entities_with_components(gameObject, building)) {
+                                    if (building->getType() == lastEntity.component<Building>()->getType())
+                                        selection.push_back(entity);
+                                }
+                            }
+
                             if (mods & GLFW_MOD_CONTROL) { 
-                                // Add to selection
-                                self->mode = mode.add(entity);
+                                // Add to current selection
+                                self->mode = mode.add(selection, glfwGetTime());
                             } else {
-                                // New singleton selection
-                                self->mode = Input::BuildingSelectedMode(entity);
+                                // New selection
+                                self->mode = Input::BuildingSelectedMode(selection, glfwGetTime());
                             }
                         }
                     } else { // Click on the map

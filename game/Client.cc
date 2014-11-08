@@ -108,9 +108,12 @@ void Client::update(double dt) {
 void Client::order(const Order &order) {
     assert(sim);
 
-    if (sim->getState().isOrderValid(order)) {
+    Order o(order);
+    o.player = playerId;
+
+    if (sim->getState().isOrderValid(o)) {
         Message message(Message::CLIENT_ORDER);
-        message.client_order.order = order;
+        message.client_order.order = o;
         sendMessage(message);
     }
 }

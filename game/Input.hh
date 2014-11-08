@@ -50,20 +50,31 @@ struct Input {
     struct BuildingSelectedMode {
         std::vector<entityx::Entity> entities;
 
-        BuildingSelectedMode(entityx::Entity entity)
-            : entities(1, entity) {
+        double lastSelectionTime;
+
+        BuildingSelectedMode(entityx::Entity entity, double time)
+            : entities(1, entity), lastSelectionTime(time) {
         }
 
-        BuildingSelectedMode(const std::vector<entityx::Entity> &entities)
-            : entities(entities) {
+        BuildingSelectedMode(const std::vector<entityx::Entity> &entities,
+                             double time)
+            : entities(entities), lastSelectionTime(time) {
             assert(entities.size() > 0);
         }
 
-        BuildingSelectedMode add(entityx::Entity entity) const {
+        BuildingSelectedMode add(entityx::Entity entity, double time) const {
             std::vector<entityx::Entity> newEntities(entities);
             newEntities.push_back(entity);
 
-            return BuildingSelectedMode(std::move(newEntities));
+            return BuildingSelectedMode(newEntities, time);
+        }
+
+        BuildingSelectedMode add(const std::vector<entityx::Entity> es,
+                                 double time) const {
+            std::vector<entityx::Entity> newEntities(entities);
+            newEntities.insert(newEntities.end(), es.begin(), es.end());
+
+            return BuildingSelectedMode(newEntities, time);
         }
 
         bool isSelected(entityx::Entity e1) const {

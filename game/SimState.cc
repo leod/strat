@@ -149,7 +149,12 @@ bool SimState::isOrderValid(const Order &order) const {
         if (!entity)
             return false;
 
-        Building::Handle building = entity.component<Building>();
+        GameObject::Handle gameObject(entity.component<GameObject>());
+        assert(gameObject);
+        if (gameObject->getOwner() != order.player)
+            return false;
+
+        Building::Handle building(entity.component<Building>());
         return building && building->getType() == BUILDING_TOWER;
     }
 
