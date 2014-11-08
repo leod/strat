@@ -5,11 +5,11 @@
 #include "Math.hh"
 #include "Sim.hh"
 #include "Map.hh"
+#include "Input.hh"
 
 #include <entityx/entityx.h>
 #include <GL/glew.h>
 
-#include "Input.hh"
 #include "opengl/OBJ.hh"
 #include "opengl/TextureManager.hh"
 
@@ -21,7 +21,8 @@ struct RenderBuilding : public entityx::Component<RenderBuilding> {
 
 struct RenderBuildingSystem :
     public entityx::Receiver<RenderBuildingSystem> {
-    RenderBuildingSystem(const Map &map) : map(map) {}
+    RenderBuildingSystem(const Map &map, const Input &input)
+        : map(map), input(input) {}
 
     void configure(entityx::EventManager &);
     void receive(const BuildingCreated &);
@@ -30,16 +31,29 @@ struct RenderBuildingSystem :
 
 private:
     const Map &map;
+    const Input &input;
 };
 
 struct RenderFlyingResourceSystem {
     RenderFlyingResourceSystem(const Map &map, const InterpState &interp)
-        : map(map), interp(interp) {}
+        : map(map), interp(interp) {
+    }
 
     void render(entityx::EntityManager &entities);
 
 private:
     const Map &map;
+    const InterpState &interp;
+};
+
+struct RenderRocketSystem {
+    RenderRocketSystem(const InterpState &interp)
+        : interp(interp) {
+    }
+
+    void render(entityx::EntityManager &entities);
+
+private:
     const InterpState &interp;
 };
 
@@ -55,7 +69,7 @@ private:
     opengl::OBJ treeObj;
 };
 
-void setupGraphics(const Config &, const View &);
-void drawCursor(const Map &map, const View &view);
+void setupGraphics(const Config &, const Input::View &);
+void drawCursor(const Map &, const Input &);
 
 #endif

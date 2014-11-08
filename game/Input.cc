@@ -3,26 +3,32 @@
 #include "Sim.hh"
 #include "Map.hh"
 #include "Client.hh"
+#include "Terrain.hh"
 
 #define GLM_FORCE_RADIANS
 #include <GL/glu.h>
 #include <glm/gtx/rotate_vector.hpp>
+#include <inline_variant_visitor/inline_variant.hpp>
 
-View::View()
+using namespace glm;
+
+// GLFW does not allow setting a context for callbacks,
+// so here we use a global variable for the current input instance
+static Input *g_input = NULL;
+
+Input::View::View()
     : angle(0),
-      distance(40.0f),
-      cursorHeight(0),
-      hasMapRectangle(false) {
+      distance(40.0f) {
 }
 
-// Calculates a ray going from the camera position in the direction the mouse is pointing
-static Ray calculateViewRay(double mx, double my, const View &view) {
+// Calculates a ray going from the camera position in the direction the mouse is pointing at
+static Ray calculateViewRay(double mx, double my, const Input::View &view) {
     GLint viewport[4];
     GLdouble modelview[16];
     GLdouble projection[16];
 
-    glm::dvec3 nearP;
-    glm::dvec3 farP;
+    dvec3 nearP;
+    dvec3 farP;
 
     glGetIntegerv(GL_VIEWPORT, viewport);
     glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
@@ -33,88 +39,82 @@ static Ray calculateViewRay(double mx, double my, const View &view) {
     gluUnProject(mx, viewport[3] - my, 0.1, modelview, projection, viewport,
                  &farP.x, &farP.y, &farP.z);
 
-    return Ray(view.position, glm::vec3(glm::normalize(farP - nearP)));
+    return Ray(view.position, vec3(normalize(farP - nearP)));
 }
 
 Input::Input(GLFWwindow *window, Client &client, const TerrainMesh &terrain)
     : window(window), client(client), sim(client.getSim()),
       terrain(terrain), map(sim.getState().getMap()),
-      scrollSpeed(5.0f), wasPressB(false), wasPressN(false) {
+      mode(Input::DefaultMode()),
+      scrollSpeed(5.0f) {
     view.target.x = map.getSizeX() / 2;
     view.target.y = map.getSizeY() / 2;
+
+    assert(!g_input);
+    g_input = this;
+
+    setCallbacks(window);
 }
 
-const View &Input::getView() const {
+Input::~Input() {
+    assert(g_input == this);
+    g_input = NULL;
+}
+
+const Input::View &Input::getView() const {
     return view;
+}
+
+const Input::Mode &Input::getMode() const {
+    return mode;
+}
+
+const Map::Pos &Input::getCursor() const {
+    return cursor;
 }
 
 void Input::update(double dt) {
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
-    Ray ray = calculateViewRay(mx, my, view);
+    mouseRay = calculateViewRay(mx, my, view);
 
-    GameObject::Handle gameObject;
-    Building::Handle building;
-    for (auto entity : sim.getEntities().entities_with_components(gameObject, building)) {
-        AABB aabb(glm::vec3(building->getPosition()),
-                  glm::vec3(building->getPosition() + building->getTypeInfo().size));
-
-        if (aabb.intersectWithRay(ray, 1.0f, 5000.0f)) {
-            //std::cout << "HIT " << gameObject->getId() << std::endl;
+    // What grid point is the mouse pointing at?
+    {
+        float mapT;
+        Map::Pos p;
+        if (terrain.intersectWithRay(mouseRay, p, mapT)) {
+            assert(map.isPoint(p));
+            cursor = p;
         }
     }
 
+    scrollView(dt);
+}
 
-    float mapT;
-    Map::Pos cursor;
-    if (terrain.intersectWithRay(ray, cursor, mapT)) {
-        assert(map.isPoint(cursor));
-
-        view.cursor = cursor;
-        view.cursorHeight = map.point(cursor).height;
-    }
-
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
-        if (!view.hasMapRectangle) {
-            view.mapRectangleStart = view.cursor;
-            view.hasMapRectangle = true;
-        }
-    } else {
-        if (view.hasMapRectangle) {
-            Map::Pos a(view.cursor), b(view.mapRectangleStart);
-
-            Order order(Order::RAISE_MAP);
-            order.raiseMap.x = std::min(a.x, b.x);
-            order.raiseMap.y = std::min(a.y, b.y);
-            order.raiseMap.w = std::max(a.x, b.x) - std::min(a.x, b.x);
-            order.raiseMap.h = std::max(a.y, b.y) - std::min(a.y, b.y);
-            client.order(order);
-        }
-
-        view.hasMapRectangle = false;
-    }
-
-    glm::vec2 mapDirection(view.target - view.position);
+void Input::scrollView(double dt) {
+    vec2 mapDirection(view.target - view.position);
+    vec2 orthDirection(cross(vec3(0, 0, 1), vec3(mapDirection, 0)));
 
     float moveDelta = scrollSpeed * dt;
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && view.target.y < map.getSizeY()) {
-        glm::vec2 scroll(mapDirection * moveDelta);
-        tryScroll(scroll);
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS
+        && view.target.y < map.getSizeY()) {
+        tryScroll(mapDirection * moveDelta);
     }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS && view.target.x > 0) {
-        glm::vec2 scroll(glm::cross(glm::vec3(0, 0, 1), glm::vec3(mapDirection, 0)) * moveDelta);
-        tryScroll(scroll);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS
+        && view.target.x > 0) {
+        tryScroll(orthDirection * moveDelta);
     }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && view.target.y > 0) {
-        glm::vec2 scroll(-mapDirection * moveDelta);
-        tryScroll(scroll);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS
+        && view.target.y > 0) {
+        tryScroll(-mapDirection * moveDelta);
     }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS && view.target.x < map.getSizeX()) {
-        glm::vec2 scroll(-glm::cross(glm::vec3(0, 0, 1), glm::vec3(mapDirection, 0)) * moveDelta);
-        tryScroll(scroll);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS
+        && view.target.x < map.getSizeX()) {
+        tryScroll(-orthDirection * moveDelta);
     }
-    if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS && view.distance > 3.0f) {
+    if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS
+        && view.distance > 3.0f) {
         view.distance -= dt * 35.0f;
         if (view.distance < 3.0f)
             view.distance = 3.0f;
@@ -129,39 +129,16 @@ void Input::update(double dt) {
         view.angle -= dt * 2.0f;
     }
 
-    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
-        if (!wasPressB) {
-            wasPressB = true;
-
-            Order order(Order::BUILD);
-            order.build.x = static_cast<uint16_t>(view.cursor.x);
-            order.build.y = static_cast<uint16_t>(view.cursor.y);
-            order.build.type = BUILDING_MINER;
-            client.order(order);
-        }
-    } else wasPressB = false;
-    if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS) {
-        if (!wasPressN) {
-            wasPressN = true;
-
-            Order order(Order::BUILD);
-            order.build.x = static_cast<uint16_t>(view.cursor.x);
-            order.build.y = static_cast<uint16_t>(view.cursor.y);
-            order.build.type = BUILDING_STORE;
-            client.order(order);
-        }
-    } else wasPressN = false;
-
     view.position.x = view.target.x;
     view.position.y = view.target.y - 10.0f;
     view.position.z = view.target.z + view.distance;
 
-    glm::vec3 origin_camera(0, -10.0f, view.distance);
-    view.position = view.target + glm::rotateZ(origin_camera, view.angle);
+    vec3 origin_camera(0, -10.0f, view.distance);
+    view.position = view.target + rotateZ(origin_camera, view.angle);
 }
 
-void Input::tryScroll(const glm::vec2 &delta) {
-    view.target += glm::vec3(delta, 0);
+void Input::tryScroll(const vec2 &delta) {
+    view.target += vec3(delta, 0);
 
     if (view.target.x < 0) view.target.x = 0;
     if (view.target.x >= map.getSizeX()) view.target.x = map.getSizeX() - 1;
@@ -169,4 +146,112 @@ void Input::tryScroll(const glm::vec2 &delta) {
     if (view.target.y >= map.getSizeY()) view.target.y = map.getSizeY() - 1;
 
     view.target.z = map.point(view.target.x, view.target.y).height;
+}
+
+void Input::build(BuildingType type) {
+    Order order(Order::BUILD);
+    order.build.x = static_cast<uint16_t>(cursor.x);
+    order.build.y = static_cast<uint16_t>(cursor.y);
+    order.build.type = type;
+    client.order(order);
+}
+
+entityx::Entity Input::pickEntity() {
+    entityx::Entity minEntity;
+    float minD = 0.0f;
+
+    GameObject::Handle gameObject;
+    Building::Handle building;
+    for (auto entity : sim.getEntities().entities_with_components(gameObject, building)) {
+        AABB aabb(vec3(building->getPosition()),
+                  vec3(building->getPosition() + building->getTypeInfo().size));
+        float d;
+
+        if (aabb.intersectWithRay(mouseRay, 1.0f, 5000.0f, &d)
+            && (!minEntity || d < minD)) {
+            minEntity = entity;
+        }
+    }
+
+    return minEntity;
+}
+
+void Input::setCallbacks(GLFWwindow *window) {
+    glfwSetMouseButtonCallback(window, Input::onMouseButton);
+    glfwSetKeyCallback(window, Input::onKey);
+}
+
+void Input::onMouseButton(GLFWwindow *window,
+                          int button, int action, int mods) {
+    if (Input *self = g_input) {
+        match(self->mode,
+            [&](const Input::DefaultMode &) {
+                if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_1) {
+                    // Click on an entity?
+                    if (entityx::Entity entity = self->pickEntity()) {
+                        // If it's a building, switch mode
+                        if (entity.has_component<Building>()) {
+                            self->mode = Input::BuildingSelectedMode(entity);
+                        }
+                    } else { // Click on the map
+                        self->mode = Input::MapSelectionMode(self->cursor);
+                    }
+                }
+            },
+
+            [&](const Input::BuildingSelectedMode &mode) {
+                if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_1) {
+                    // Click on an entity?
+                    if (entityx::Entity entity = self->pickEntity()) {
+                        // If it's a building, switch mode
+                        if (entity.has_component<Building>()) {
+                            self->mode = Input::BuildingSelectedMode(entity);
+                        }
+                    } else { // Click on the map
+                        self->mode = Input::DefaultMode();
+                    }
+                }
+            },
+
+            [&](const Input::MapSelectionMode &mode) {
+                if (action == GLFW_RELEASE
+                    && button == GLFW_MOUSE_BUTTON_1) {
+                    Map::Pos a(self->cursor), b(mode.start);
+
+                    Order order(Order::RAISE_MAP);
+                    order.raiseMap.x = std::min(a.x, b.x);
+                    order.raiseMap.y = std::min(a.y, b.y);
+                    order.raiseMap.w = std::max(a.x, b.x) - std::min(a.x, b.x);
+                    order.raiseMap.h = std::max(a.y, b.y) - std::min(a.y, b.y);
+                    self->client.order(order);
+
+                    self->mode = Input::DefaultMode();
+                } else if (action == GLFW_PRESS
+                           && button == GLFW_MOUSE_BUTTON_2) {
+                    self->mode = Input::DefaultMode();
+                }
+            });
+    }
+}
+
+void Input::onKey(GLFWwindow *window, int key, int, int action, int mods) {
+    if (Input *self = g_input) {
+        match(self->mode,
+            [&](const Input::DefaultMode &) {
+                if (action == GLFW_PRESS) {
+                    if (key == GLFW_KEY_B)
+                        self->build(BUILDING_MINER);
+                    else if (key == GLFW_KEY_N)
+                        self->build(BUILDING_STORE);
+                    else if (key == GLFW_KEY_M)
+                        self->build(BUILDING_TOWER);
+                }
+            },
+
+            [&](const Input::BuildingSelectedMode &) {
+            },
+
+            [&](const Input::MapSelectionMode &) {
+            });
+    }
 }

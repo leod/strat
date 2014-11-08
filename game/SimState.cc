@@ -211,7 +211,8 @@ void SimState::addResourceTransfer(Entity fromEntity, Entity toEntity,
                                    size_t amount) {
     Building::Handle fromBuilding(fromEntity.component<Building>()),
                      toBuilding(toEntity.component<Building>());
-    assert(fromBuilding && toBuilding);
+    GameObject::Handle fromObject(fromEntity.component<GameObject>());
+    assert(fromBuilding && toBuilding && fromObject);
 
     // For now: start and end in the middle of the top of the buildings
     // These positions are used to calculate the distance of the transfer,
@@ -230,9 +231,28 @@ void SimState::addResourceTransfer(Entity fromEntity, Entity toEntity,
                         Fixed(toTi.size.z));
 
     entityx::Entity entity = entities.create();
-    entity.assign<GameObject>(PLAYER_NEUTRAL, ++entityCounter);
+    entity.assign<GameObject>(fromObject->getOwner(), ++entityCounter);
     entity.assign<FlyingObject>(fromPosition, toPosition);
     entity.assign<FlyingResource>(resource, amount);
+}
+
+void SimState::addRocket(Entity fromEntity, Map::Pos toPos) {
+    Building::Handle fromBuilding(fromEntity.component<Building>());
+    GameObject::Handle fromObject(fromEntity.component<GameObject>());
+    assert(fromBuilding && fromObject);
+
+    fvec3 fromPosition(fromBuilding->getPosition()),
+          toPosition(toPos, map.point(toPos).height);
+
+    BuildingTypeInfo &fromTi(fromBuilding->getTypeInfo());
+    fromPosition += fvec3(Fixed(fromTi.size.x) / Fixed(2),
+                          Fixed(fromTi.size.y) / Fixed(2),
+                          Fixed(fromTi.size.z));
+
+    entityx::Entity entity = entities.create();
+    entity.assign<GameObject>(fromObject->getOwner(), ++entityCounter);
+    entity.assign<FlyingObject>(fromPosition, toPosition);
+    entity.assign<Rocket>();
 }
 
 void SimState::raiseWaterLevel() {

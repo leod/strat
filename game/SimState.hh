@@ -59,9 +59,11 @@ struct SimState : entityx::EntityX {
     // Tick length in seconds
     Fixed getTickLengthS() const;
 
-    void addResourceTransfer(Entity fromPosition, Entity toPosition,
+    void addResourceTransfer(Entity fromEntity, Entity toEntity,
                              ResourceType resource,
                              size_t amount); 
+
+    void addRocket(Entity fromEntity, Map::Pos toPos);
 
     void raiseWaterLevel();
     void waterTick();

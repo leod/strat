@@ -72,8 +72,10 @@ void startGame() {
     std::cout << "All players connected; starting game" << std::endl;
 
     assert(!gameStarted);
-    assert(settings.players.empty());
 
+    // Store player infos in the GameSettings, 
+    // and then broadcast it to the clients
+    assert(settings.players.empty());
     for (auto client : clients)
         settings.players.push_back(client->player);
 
@@ -127,6 +129,7 @@ int main() {
     settings.heightLimit = 15;
     settings.tickLengthMs = 50;
 
+    // Wait for this number of players before starting the game
     size_t numWaitPlayers = 1;
 
     ENetAddress address;

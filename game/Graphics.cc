@@ -5,17 +5,20 @@
 #include "InterpState.hh"
 
 #include <GL/glu.h>
+#include <inline_variant_visitor/inline_variant.hpp>
 
 #include <vector>
 #include <iostream>
 
+using namespace glm;
+
 #define checkError() printOglError(__FILE__, __LINE__)
 
-static glm::vec3 playerColors[4] = {
-    glm::vec3(0.0, 1.0, 1.0),
-    glm::vec3(1.0, 1.0, 0.0),
-    glm::vec3(0.0, 1.0, 0.0),
-    glm::vec3(0.0, 0.0, 1.0)
+static vec3 playerColors[4] = {
+    vec3(0.0, 1.0, 1.0),
+    vec3(1.0, 1.0, 0.0),
+    vec3(0.0, 1.0, 0.0),
+    vec3(0.0, 0.0, 1.0)
 };
 
 static void drawCube() {
@@ -57,6 +60,24 @@ static void drawCube() {
     glVertex3f(0.0f, 0.0f, 1.0f);
 }
 
+static vec3 bezier(const vec3 &a, const vec3 &b,
+                        float height, float t) {
+    // Bezier interpolation
+    vec3 m((a.x + b.x) * 0.5,
+                (a.y + b.y) * 0.5,
+                (a.z + b.z) * 0.5f + height);
+
+    vec3 a_to_m(m - a);
+    vec3 da(a + a_to_m * t);
+    vec3 m_to_b(b - m);
+    vec3 dm(m + m_to_b * t);
+
+    vec3 da_to_dm(dm - da);
+    vec3 dda(da + da_to_dm * t);
+
+    return dda;
+}
+
 void printOglError(const char *file, int line) {
     GLenum error = glGetError();
     if (error != GL_NO_ERROR) {
@@ -75,22 +96,46 @@ void RenderBuildingSystem::render(entityx::EntityManager &entities) {
 
     GameObject::Handle gameObject;
     Building::Handle building;
-    for (entityx::Entity entity:
+    for (entityx::Entity entity :
          entities.entities_with_components(gameObject, building)) {
+        vec3 position(building->getPosition()),
+             size(building->getTypeInfo().size);
+
         glPushMatrix();
-        glTranslatef(building->getPosition().x,
-                     building->getPosition().y,
-                     building->getPosition().z);
-        glScalef(building->getTypeInfo().size.x,
-                 building->getTypeInfo().size.y,
-                 building->getTypeInfo().size.z);
+        glTranslatef(position.x, position.y, position.z);
+        glScalef(size.x, size.y, size.z);
 
         assert(gameObject->getOwner() > 0 && gameObject->getOwner()-1 < 4);
-        glm::vec3 color(playerColors[gameObject->getOwner()-1]); //TODO
+        vec3 color(playerColors[gameObject->getOwner()-1]); //TODO
         glBegin(GL_QUADS);
         glColor4f(color.x, color.y, color.z, 1.0f);
         drawCube();
         glEnd();
+
+        glPopMatrix();
+
+        if (auto mode = boost::get<Input::BuildingSelectedMode>(&input.getMode())) {
+            if (mode->entity == entity) {
+                glPushMatrix();
+                vec3 center = position + size / 2.0f;
+                float radius = sqrt((size.x * size.x) + (size.y * size.y));
+
+                glTranslatef(center.x, center.y, center.z);
+
+                glBegin(GL_LINE_LOOP);
+                glColor3f(0.0f, 0.0f, 1.0f);
+
+
+                for (float i = 0.0f; i < 2*M_PI; i += 2*M_PI / 360) {
+                    glVertex3f(cos(i) * radius, sin(i) * radius, 0.0f);
+                }
+
+                glEnd();
+
+                glPopMatrix();
+            }
+        }
+
         glPopMatrix();
     }
 
@@ -103,36 +148,60 @@ void RenderBuildingSystem::receive(const BuildingCreated &event) {
 void RenderFlyingResourceSystem::render(entityx::EntityManager &entities) {
     glDisable(GL_CULL_FACE);
 
-    FlyingObject::Handle r;
+    FlyingObject::Handle flyingObject;
     FlyingResource::Handle resource;
-    for (auto entity : entities.entities_with_components(r, resource)) {
-        glm::vec3 a(r->fromPosition), b(r->toPosition);
-
-        // Bezier interpolation
-        glm::vec3 m((a.x + b.x) * 0.5,
-                    (a.y + b.y) * 0.5,
-                    (a.z + b.z) * 0.5f + r->distance.toFloat() * 0.5f);
-
-        float ta = r->getLastProgress().toFloat();
-        float tb = r->getProgress().toFloat();
+    for (auto entity :
+         entities.entities_with_components(flyingObject, resource)) {
+        float ta = flyingObject->getLastProgress().toFloat();
+        float tb = flyingObject->getProgress().toFloat();
         float t = lerp<float>(ta, tb, interp.getT());
 
-        glm::vec3 a_to_m(m - a);
-        glm::vec3 da(a + a_to_m * t);
-        glm::vec3 m_to_b(b - m);
-        glm::vec3 dm(m + m_to_b * t);
-
-        glm::vec3 da_to_dm(dm - da);
-        glm::vec3 dda(da + da_to_dm * t);
+        vec3 p(bezier(vec3(flyingObject->fromPosition),
+                           vec3(flyingObject->toPosition),
+                           flyingObject->distance.toFloat() * 0.5f,
+                           t));
+        vec3 c(resource->color);
 
         glPushMatrix();
-        glTranslatef(dda.x, dda.y, dda.z);
+        glTranslatef(p.x, p.y, p.z);
         glTranslatef(-0.5f, -0.5f, 0.0f);
-        glm::vec3 color(resource->color);
+
         glBegin(GL_QUADS);
-        glColor4f(color.x, color.y, color.z, 1.0f);
+        glColor4f(c.x, c.y, c.z, 1.0f);
         drawCube();
         glEnd();
+
+        glPopMatrix();
+    }
+
+    glEnable(GL_CULL_FACE);
+}
+
+void RenderRocketSystem::render(entityx::EntityManager &entities) {
+    glDisable(GL_CULL_FACE);
+
+    FlyingObject::Handle flyingObject;
+    Rocket::Handle rocket;
+    for (auto entity : entities.entities_with_components(flyingObject, rocket)) {
+        float ta = flyingObject->getLastProgress().toFloat();
+        float tb = flyingObject->getProgress().toFloat();
+        float t = lerp<float>(ta, tb, interp.getT());
+
+        vec3 p(bezier(vec3(flyingObject->fromPosition),
+                           vec3(flyingObject->toPosition),
+                           flyingObject->distance.toFloat() * 0.5f,
+                           t));
+        vec3 c(1.0f, 0.0f, 0.0f);
+
+        glPushMatrix();
+        glTranslatef(p.x, p.y, p.z);
+        glTranslatef(-0.5f, -0.5f, 0.0f);
+
+        glBegin(GL_QUADS);
+        glColor4f(c.x, c.y, c.z, 1.0f);
+        drawCube();
+        glEnd();
+
         glPopMatrix();
     }
 
@@ -166,7 +235,7 @@ void RenderTreeSystem::render(entityx::EntityManager &entities) {
 
         Tree::Handle tree;
         for (auto entity : entities.entities_with_components(tree)) {
-            glm::vec3 p(tree->getPosition());
+            vec3 p(tree->getPosition());
 
             glPushMatrix();
             glTranslatef(p.x, p.y, p.z);
@@ -187,7 +256,7 @@ void RenderTreeSystem::render(entityx::EntityManager &entities) {
     glEnable(GL_CULL_FACE);
 }
 
-void setupGraphics(const Config &config, const View &view) {
+void setupGraphics(const Config &config, const Input::View &view) {
     checkError();
     
     glMatrixMode(GL_PROJECTION);
@@ -235,56 +304,62 @@ void setupGraphics(const Config &config, const View &view) {
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
 
-void drawCursor(const Map &map, const View &view) {
+void drawCursor(const Map &map, const Input &input) {
     glDisable(GL_CULL_FACE);
 
     float dz = 0.01;
-    float tx = view.cursor.x;
-    float ty = view.cursor.y;
-    float tz = map.point(view.cursor).height + dz;
+    float tx = input.getCursor().x;
+    float ty = input.getCursor().y;
+    float tz = map.point(input.getCursor()).height + dz;
 
     float s = 0.2f;
 
-    if (!view.hasMapRectangle) {
-        glBegin(GL_QUADS);
-        glColor4f(1.0f, 0.0f, 1.0f, 0.5f);
-        glVertex3f(tx - s, ty - s, tz);
-        glVertex3f(tx + s, ty - s, tz);
-        glVertex3f(tx + s, ty + s, tz);
-        glVertex3f(tx - s, ty + s, tz);
-        glEnd();
-    } else {
-        glBegin(GL_LINE_STRIP);
-        glColor4f(1.0, 1.0, 1.0, 0.9f);
-        for (size_t x = std::min(view.mapRectangleStart.x, view.cursor.x);
-             x <= std::max(view.mapRectangleStart.x, view.cursor.x);
-             x++) {
-            glVertex3f(x, view.mapRectangleStart.y, map.point(x, view.mapRectangleStart.y).height + dz);
-        }
-        glEnd();
-        glBegin(GL_LINE_STRIP);
-        for (size_t x = std::min(view.mapRectangleStart.x, view.cursor.x);
-             x <= std::max(view.mapRectangleStart.x, view.cursor.x);
-             x++) {
-            glVertex3f(x, view.cursor.y, map.point(x, view.cursor.y).height + dz);
-        }
-        glEnd();
-        glBegin(GL_LINE_STRIP);
-        for (size_t y = std::min(view.mapRectangleStart.y, view.cursor.y);
-             y <= std::max(view.mapRectangleStart.y, view.cursor.y);
-             y++) {
-            glVertex3f(view.mapRectangleStart.x, y, map.point(view.mapRectangleStart.x, y).height + dz);
-        }
-        glEnd();
-        glBegin(GL_LINE_STRIP);
-        for (size_t y = std::min(view.mapRectangleStart.y, view.cursor.y);
-             y <= std::max(view.mapRectangleStart.y, view.cursor.y);
-             y++) {
-            glVertex3f(view.cursor.x, y, map.point(view.cursor.x, y).height + dz);
-        }
-        glEnd();
+    match(input.getMode(),
+        [&] (const Input::DefaultMode &) {
+            glBegin(GL_QUADS);
+            glColor4f(1.0f, 0.0f, 1.0f, 0.5f);
+            glVertex3f(tx - s, ty - s, tz);
+            glVertex3f(tx + s, ty - s, tz);
+            glVertex3f(tx + s, ty + s, tz);
+            glVertex3f(tx - s, ty + s, tz);
+            glEnd();
+        },
 
-    }
+        [&] (const Input::BuildingSelectedMode &) {
+            glBegin(GL_QUADS);
+            glColor4f(1.0f, 0.0f, 1.0f, 0.5f);
+            glVertex3f(tx - s, ty - s, tz);
+            glVertex3f(tx + s, ty - s, tz);
+            glVertex3f(tx + s, ty + s, tz);
+            glVertex3f(tx - s, ty + s, tz);
+            glEnd();
+        },
+
+        [&] (const Input::MapSelectionMode &mode) {
+            Map::Pos a(mode.start), b(input.getCursor());
+
+            glBegin(GL_LINE_STRIP);
+            glColor4f(1.0, 1.0, 1.0, 0.9f);
+            for (size_t x = std::min(a.x, b.x); x <= std::max(a.x, b.x); x++) {
+                glVertex3f(x, a.y, map.point(x, a.y).height + dz);
+            }
+            glEnd();
+            glBegin(GL_LINE_STRIP);
+            for (size_t x = std::min(a.x, b.x); x <= std::max(a.x, b.x); x++) {
+                glVertex3f(x, b.y, map.point(x, b.y).height + dz);
+            }
+            glEnd();
+            glBegin(GL_LINE_STRIP);
+            for (size_t y = std::min(a.y, b.y); y <= std::max(a.y, b.y); y++) {
+                glVertex3f(a.x, y, map.point(a.x, y).height + dz);
+            }
+            glEnd();
+            glBegin(GL_LINE_STRIP);
+            for (size_t y = std::min(a.y, b.y); y <= std::max(a.y, b.y); y++) {
+                glVertex3f(b.x, y, map.point(b.x, y).height + dz);
+            }
+            glEnd();
+        });
 
     glEnable(GL_CULL_FACE);
 }

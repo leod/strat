@@ -74,12 +74,13 @@ int main(int argc, char *argv[]) {
     opengl::TextureManager textures;
     TerrainMesh terrainMesh(map, Map::Pos(16, 16));
 
-    RenderBuildingSystem renderBuildingSystem(map);
-    RenderFlyingResourceSystem renderFlyingResourceSystem(map, interp);
-    RenderTreeSystem renderTreeSystem(map, textures);
-
     Input input(window, client, terrainMesh);
-    const View &view(input.getView());
+    const Input::View &view(input.getView());
+
+    RenderBuildingSystem renderBuildingSystem(map, input);
+    RenderFlyingResourceSystem renderFlyingResourceSystem(map, interp);
+    RenderRocketSystem renderRocketSystem(interp);
+    RenderTreeSystem renderTreeSystem(map, textures);
 
     size_t frames = 0, fps = 0;
     double lastFrameTime = glfwGetTime();
@@ -107,9 +108,10 @@ int main(int argc, char *argv[]) {
         
             renderBuildingSystem.render(sim.getEntities());
             renderFlyingResourceSystem.render(sim.getEntities());
+            renderRocketSystem.render(sim.getEntities());
             renderTreeSystem.render(sim.getEntities());
 
-            drawCursor(map, view);
+            drawCursor(map, input);
 
             glfwSwapBuffers(window);
         }
@@ -125,9 +127,9 @@ int main(int argc, char *argv[]) {
 
         std::stringstream ss;
         ss << "Strats (" << fps << " FPS, "
-                         << "x=" << static_cast<int>(view.cursor.x) << ", "
-                         << "y=" << static_cast<int>(view.cursor.y) << ", "
-                         << "z=" << static_cast<int>(view.cursorHeight)
+                         << "x=" << static_cast<int>(input.getCursor().x) << ", "
+                         << "y=" << static_cast<int>(input.getCursor().y) << ", "
+                         << "z=" << static_cast<int>(map.point(input.getCursor()).height)
                          << ")";
         glfwSetWindowTitle(window, ss.str().c_str());
     } 

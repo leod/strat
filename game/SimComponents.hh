@@ -67,7 +67,7 @@ private:
     glm::uvec3 position;
 };
 
-struct FlyingObjectLanded : public entityx::Event<FlyingObjectLanded> {
+struct FlyingObjectLanded : entityx::Event<FlyingObjectLanded> {
     entityx::Entity entity; 
 
     FlyingObjectLanded(entityx::Entity entity)
@@ -75,7 +75,7 @@ struct FlyingObjectLanded : public entityx::Event<FlyingObjectLanded> {
     }
 };
 
-struct FlyingObject : public entityx::Component<FlyingObject> {
+struct FlyingObject : entityx::Component<FlyingObject> {
 private:
     Fixed lastProgress; // e.g. for interpolation
     Fixed progress;
@@ -98,7 +98,7 @@ public:
     Fixed getLastProgress() const { return lastProgress; }
 };
 
-struct FlyingResource : public entityx::Component<FlyingResource> {
+struct FlyingResource : entityx::Component<FlyingResource> {
     const ResourceType resource;
     const size_t amount;
 
@@ -111,7 +111,11 @@ struct FlyingResource : public entityx::Component<FlyingResource> {
     }
 };
 
-struct BuildingCreated : public entityx::Event<BuildingCreated> {
+struct Rocket : entityx::Component<Rocket> {
+
+};
+
+struct BuildingCreated : entityx::Event<BuildingCreated> {
     entityx::Entity entity;
 
     BuildingCreated(entityx::Entity entity)

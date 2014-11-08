@@ -4,8 +4,9 @@
 
 BuildingTypeInfo buildingTypeInfo[BUILDING_MAX] = {
     { { 5, 5, 3 } },
-    { { 3, 3, 5 } },
-    { { 2, 2, 2 } }
+    { { 2, 2, 4 } },
+    { { 1, 1, 1 } },
+    { { 1, 1, 3 } }
 };
 
 size_t sqDistance(const glm::uvec2 &a, const glm::uvec2 &b) {

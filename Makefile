@@ -1,6 +1,6 @@
 #CXX=g++ 
 
-INC=-Ilib/enet-1.3.12/include -Ilib/glew-1.11.0/include -Ilib/glfw-3.0.4.bin.WIN32/include -Ilib/glm -Ilib/ -I. -Ilib/entityx-master -Ilib/DevIL/1.7.8/include/
+INC=-Ilib/enet-1.3.12/include -Ilib/glew-1.11.0/include -Ilib/glfw-3.0.4.bin.WIN32/include -Ilib/glm -Ilib/ -I. -Ilib/entityx-master -Ilib/DevIL/1.7.8/include/ -Ilib/boost_1_57_0
 LIB=-Llib/entityx-master -Llib/enet-1.3.12 -Llib/glew-1.11.0/lib -Llib/glfw-3.0.4.bin.WIN32/lib-mingw  -Llib/DevIL/1.7.8/lib/MinGW/Release
 CXXFLAGS=--std=c++0x -Wall -O3 $(INC) -DGLEW_STATIC -g
 

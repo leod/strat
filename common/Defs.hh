@@ -18,6 +18,7 @@ enum BuildingType {
     BUILDING_BASE,
     BUILDING_STORE,
     BUILDING_MINER,
+    BUILDING_TOWER,
     BUILDING_MAX
 };
 

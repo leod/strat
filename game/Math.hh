@@ -5,6 +5,8 @@
 
 #include <vector>
 
+#define M_PI 3.14159265358979323846264338327
+
 template <typename T>
 T lerp(T a, T b, T t) {
     return (1 - t) * a + t * b;
@@ -14,6 +16,9 @@ float randomFloat();
 
 struct Ray {
     glm::vec3 origin, direction;
+
+    Ray() {
+    }
 
     Ray(const glm::vec3 &origin, const glm::vec3 &direction)
         : origin(origin), direction(direction) {
