@@ -44,7 +44,8 @@ static Ray calculateViewRay(double mx, double my, const Input::View &view) {
     return Ray(view.position, vec3(normalize(farP - nearP)));
 }
 
-Input::Input(GLFWwindow *window, Client &client, const TerrainMesh &terrain)
+Input::Input(GLFWwindow *window, Client &client,
+             entityx::EventManager &events, const TerrainMesh &terrain)
     : window(window), client(client), sim(client.getSim()),
       terrain(terrain), map(sim.getState().getMap()),
       mode(Input::DefaultMode()),
@@ -56,6 +57,8 @@ Input::Input(GLFWwindow *window, Client &client, const TerrainMesh &terrain)
     g_input = this;
 
     setCallbacks(window);
+
+    events.subscribe<entityx::EntityDestroyedEvent>(*this);
 }
 
 Input::~Input() {
@@ -91,6 +94,18 @@ void Input::update(double dt) {
     }
 
     scrollView(dt);
+}
+
+void Input::receive(const entityx::EntityDestroyedEvent &event) {
+    if (auto buildSel = boost::get<BuildingSelectedMode>(&mode)) {
+        if (buildSel->isSelected(event.entity)) {
+            if (buildSel->entities.size() == 1) {
+                mode = DefaultMode();
+            } else {
+                mode = buildSel->remove(event.entity);
+            }
+        }
+    }
 }
 
 void Input::scrollView(double dt) {
@@ -211,13 +226,21 @@ void Input::onMouseButton(GLFWwindow *window,
                             entityx::Entity lastEntity(mode.entities.back());
 
                             // Double click selection
-                            if (lastEntity == entity
+                            if (lastEntity
+                                && lastEntity == entity
                                 && glfwGetTime() - mode.lastSelectionTime <= DOUBLE_CLICK_S) {
+                                Building::Handle lastBuilding(lastEntity.component<Building>());
+                                GameObject::Handle lastObject(lastEntity.component<GameObject>());
+
+                                // Find all game objects of the same type and owner
                                 GameObject::Handle gameObject;
                                 Building::Handle building;
                                 for (auto entity :
                                         self->sim.getEntities().entities_with_components(gameObject, building)) {
-                                    if (building->getType() == lastEntity.component<Building>()->getType())
+                                    if (building->getType() == lastBuilding->getType()
+                                        && lastObject->getOwner() == gameObject->getOwner()
+                                        && lastObject->getOwner() == self->client.getPlayerId()
+                                        && entity != lastEntity)
                                         selection.push_back(entity);
                                 }
                             }

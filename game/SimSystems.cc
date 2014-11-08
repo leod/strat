@@ -69,6 +69,8 @@ void RocketSystem::receive(const FlyingObjectLanded &event) {
         Map::Pos p(flyingObject->toPosition);
         assert(map.isPoint(p));
 
-        map.crater(p, 3);
+        map.forNeighbors(p, [&] (GridPoint &gp) {
+            map.crater(gp.pos, 2);
+        });
     }
 }

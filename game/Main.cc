@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
     opengl::TextureManager textures;
     TerrainMesh terrainMesh(map, Map::Pos(16, 16));
 
-    Input input(window, client, terrainMesh);
+    Input input(window, client, sim.getEvents(), terrainMesh);
     const Input::View &view(input.getView());
 
     RenderBuildingSystem renderBuildingSystem(map, input);

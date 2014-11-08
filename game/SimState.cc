@@ -210,7 +210,20 @@ void SimState::runOrder(const Order &order) {
 
         entityx::Entity entity = getGameObject(order.attack.objectId);
 
-        addRocket(entity, Map::Pos(order.attack.x, order.attack.y));
+        // TODO: Random numbers again..
+        int radius = 10;
+        int dx = rand() % radius - radius / 2;
+        int dy = rand() % radius - radius / 2;
+
+        int x = order.attack.x + dx;
+        int y = order.attack.y + dy;
+
+        if (x < 0) x = 0;
+        if (x >= map.getSizeX()) x = map.getSizeX() - 1;
+        if (y < 0) y = 0;
+        if (y >= map.getSizeY()) y = map.getSizeY() - 1;
+
+        addRocket(entity, Map::Pos(x, y));
         return;
     }
 

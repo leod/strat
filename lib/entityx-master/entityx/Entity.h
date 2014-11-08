@@ -168,6 +168,8 @@ public:
   Entity::Id id_ = INVALID;
 };
 
+inline std::ostream &operator << (std::ostream &out, const Entity::Id &id);
+
 
 /**
  * A ComponentHandle<C> is a wrapper around an instance of a component.

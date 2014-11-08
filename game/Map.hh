@@ -10,6 +10,8 @@
 #include <vector>
 
 struct GridPoint {
+    glm::ivec2 pos;
+
     size_t height;
 
     // Progress of heightening
@@ -122,7 +124,7 @@ struct Map {
 
     void crater(const Pos &p, size_t depth);
     void raise(const Pos &p, const Pos &s);
-    void tick(Fixed tickLengthS);
+    void tick(entityx::EntityManager &, Fixed tickLengthS);
 
 private:
     size_t sizeX;

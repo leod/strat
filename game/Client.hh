@@ -43,6 +43,11 @@ struct Client {
         return interp;
     }
 
+    PlayerId getPlayerId() const {
+        assert(playerId > 0);
+        return playerId;
+    }
+
 private:
     std::string username;
 

@@ -38,6 +38,10 @@ struct Sim {
         return state.entities;
     }
 
+    entityx::EventManager &getEvents() {
+        return state.events;
+    }
+
 private:
     SimState state;
 

@@ -193,6 +193,7 @@ void RenderRocketSystem::render(entityx::EntityManager &entities) {
         glPushMatrix();
         glTranslatef(p.x, p.y, p.z);
         glTranslatef(-0.5f, -0.5f, 0.0f);
+        glScalef(2.0f, 1.0f, 1.0f);
 
         glBegin(GL_QUADS);
         glColor4f(c.x, c.y, c.z, 1.0f);

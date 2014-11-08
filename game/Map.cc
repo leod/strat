@@ -10,6 +10,12 @@ Map::Map(size_t sizeX, size_t sizeY)
       maxHeight(0),
       points(sizeX * sizeY) {
     assert(sizeX > 0 && sizeY > 0);
+
+    for (size_t x = 0; x < sizeX; x++) {
+        for (size_t y = 0; y < sizeY; y++) {
+            point(x, y).pos = Map::Pos(x, y);
+        }
+    } 
 } 
 
 Map Map::generate(size_t sizeX, size_t sizeY,
@@ -53,7 +59,7 @@ Map Map::generate(size_t sizeX, size_t sizeY,
 void Map::crater(const Pos &p, size_t depth) {
     GridPoint &gp(point(p));
     gp.growthTarget = -static_cast<int>(std::min(gp.height, depth));
-    gp.growthPerS = Fixed(5);
+    gp.growthPerS = Fixed(8);
 }
 
 void Map::raise(const Pos &p, const Pos &s) {
@@ -75,7 +81,7 @@ void Map::raise(const Pos &p, const Pos &s) {
     });
 }
 
-void Map::tick(Fixed tickLengthS) {
+void Map::tick(entityx::EntityManager &entities, Fixed tickLengthS) {
     for (size_t x = 0; x < sizeX; x++) {
         for (size_t y = 0; y < sizeY; y++) {
             GridPoint &p(point(x, y));
@@ -83,6 +89,10 @@ void Map::tick(Fixed tickLengthS) {
             assert(static_cast<int>(p.height) + p.growthTarget >= 0);
 
             if (p.growthTarget != 0 && p.growthProgress < Fixed(1)) {
+                if (p.entity) { 
+                    entities.destroy(p.entity.id());
+                }
+
                 p.growthProgress += p.growthPerS * tickLengthS;
 
                 if (p.growthProgress >= Fixed(1)) {
