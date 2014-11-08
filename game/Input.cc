@@ -203,9 +203,14 @@ void Input::onMouseButton(GLFWwindow *window,
                 if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_1) {
                     // Click on an entity?
                     if (entityx::Entity entity = self->pickEntity()) {
-                        // If it's a building, switch mode
                         if (entity.has_component<Building>()) {
-                            self->mode = Input::BuildingSelectedMode(entity);
+                            if (mods & GLFW_MOD_CONTROL) { 
+                                // Add to selection
+                                self->mode = mode.add(entity);
+                            } else {
+                                // New singleton selection
+                                self->mode = Input::BuildingSelectedMode(entity);
+                            }
                         }
                     } else { // Click on the map
                         self->mode = Input::DefaultMode();
@@ -213,11 +218,16 @@ void Input::onMouseButton(GLFWwindow *window,
                 }
 
                 if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_2) {
-                    Order order(Order::ATTACK);
-                    order.attack.x = self->cursor.x;
-                    order.attack.y = self->cursor.y;
-                    order.attack.objectId = mode.entity.component<GameObject>()->getId();
-                    self->client.order(order);
+                    for (auto entity : mode.entities) {
+                        if (entity.component<Building>()->getType() != BUILDING_TOWER)
+                            continue;
+
+                        Order order(Order::ATTACK);
+                        order.attack.x = self->cursor.x;
+                        order.attack.y = self->cursor.y;
+                        order.attack.objectId = entity.component<GameObject>()->getId();
+                        self->client.order(order);
+                    }
                 }
             },
 

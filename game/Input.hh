@@ -26,40 +26,62 @@ struct TerrainMesh;
 struct Input {
     // These are the modes the input can be in:
     //
-    //             left click building
-    // DefaultMode --------------------> BuildingSelectedMode
-    //
     //             build shortcuts
     // DefaultMode --------------------> DefaultMode
     //             order build
     //             
+    //             left click building
+    // DefaultMode --------------------> BuildingSelectedMode
+    //
     //             left click map
     // DefaultMode --------------------> MapSelectionMode
+    struct DefaultMode {
+    };
+
+    //                      left click building
+    // BuildingSelectedMode -----------> BuildingSelectedMode
     //
+    //                    right click map
+    // BuildingSelectMode -------------> BuildingSelectedMode
+    //                    order send rocket
+    //
+    //                      left click map
+    // BuildingSelectedMode -----------> DefaultMode
+    struct BuildingSelectedMode {
+        std::vector<entityx::Entity> entities;
+
+        BuildingSelectedMode(entityx::Entity entity)
+            : entities(1, entity) {
+        }
+
+        BuildingSelectedMode(const std::vector<entityx::Entity> &entities)
+            : entities(entities) {
+            assert(entities.size() > 0);
+        }
+
+        BuildingSelectedMode add(entityx::Entity entity) const {
+            std::vector<entityx::Entity> newEntities(entities);
+            newEntities.push_back(entity);
+
+            return BuildingSelectedMode(std::move(newEntities));
+        }
+
+        bool isSelected(entityx::Entity e1) const {
+            for (auto e2 : entities) {
+                if (e1 == e2)
+                    return true;
+            }
+
+            return false;
+        }
+    };
+
     //                  release left mouse button
     // MapSelectionMode ---------------> DefaultMode
     //                  order raising map
     //
     //                  right click
     // MapSelectionMode ---------------> DefaultMode
-    //
-    //                      left click building
-    // BuildignSelectedMode -----------> BuildingSelectedMode
-    //
-    //                    right click map
-    // BuildingSelectMode -------------> BuildingSelectedMode
-    //                    order send rocket
-    struct DefaultMode {
-    };
-
-    struct BuildingSelectedMode {
-        entityx::Entity entity;
-
-        BuildingSelectedMode(entityx::Entity entity)
-            : entity(entity) {
-        }
-    };
-
     struct MapSelectionMode {
         Map::Pos start;
 

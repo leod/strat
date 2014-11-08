@@ -115,7 +115,7 @@ void RenderBuildingSystem::render(entityx::EntityManager &entities) {
         glPopMatrix();
 
         if (auto mode = boost::get<Input::BuildingSelectedMode>(&input.getMode())) {
-            if (mode->entity == entity) {
+            if (mode->isSelected(entity)) {
                 glPushMatrix();
                 vec3 center = position + size / 2.0f;
                 float radius = sqrt((size.x * size.x) + (size.y * size.y));
