@@ -89,8 +89,8 @@ entityx::Entity SimState::findClosestBuilding(BuildingType type,
     size_t startX = p.x >= maxRange ? p.x - maxRange : 0;
     size_t startY = p.y >= maxRange ? p.y - maxRange : 0;
 
-    for (size_t x = startX; x < startX + maxRange && x < map.getSizeX(); x++) {
-        for (size_t y = startY; y < startY + maxRange && y < map.getSizeY(); y++) {
+    for (size_t x = startX; x < p.x + maxRange && x < map.getSizeX(); x++) {
+        for (size_t y = startY; y < p.y + maxRange && y < map.getSizeY(); y++) {
             const GridPoint &point(map.point(x, y));
 
             if (point.entity.valid()

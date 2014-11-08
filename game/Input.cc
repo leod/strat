@@ -148,7 +148,12 @@ void Input::scrollView(double dt) {
 
     view.position.x = view.target.x;
     view.position.y = view.target.y - 10.0f;
-    view.position.z = view.target.z + view.distance;
+    view.position.z = view.distance;
+
+    if (view.position.y > 0)
+        view.position.z += map.point(view.position.x, view.position.y).height;
+    else
+        view.position.z += map.point(view.target.x, view.target.y).height;
 
     vec3 origin_camera(0, -10.0f, view.distance);
     view.position = view.target + rotateZ(origin_camera, view.angle);

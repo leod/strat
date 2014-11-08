@@ -6,6 +6,7 @@
 
 #include <GL/glu.h>
 #include <inline_variant_visitor/inline_variant.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <vector>
 #include <iostream>
@@ -188,12 +189,24 @@ void RenderRocketSystem::render(entityx::EntityManager &entities) {
                            vec3(flyingObject->toPosition),
                            flyingObject->distance.toFloat() * 0.5f,
                            t));
+        vec3 p2(bezier(vec3(flyingObject->fromPosition),
+                            vec3(flyingObject->toPosition),
+                            flyingObject->distance.toFloat() * 0.5f,
+                            t + 0.01f));
         vec3 c(1.0f, 0.0f, 0.0f);
+
+        vec3 d(normalize(p2 - p));
+        vec3 x1(d);
+        vec3 x2(normalize(cross(x1, vec3(0, 0, 1))));
+        vec3 x3(normalize(cross(x1, x2)));
+
+        mat4 rot(vec4(x1, 0), vec4(x2, 0), vec4(x3, 0), vec4(0, 0, 0, 1));
 
         glPushMatrix();
         glTranslatef(p.x, p.y, p.z);
         glTranslatef(-0.5f, -0.5f, 0.0f);
-        glScalef(2.0f, 1.0f, 1.0f);
+        glMultMatrixf(value_ptr(rot));
+        glScalef(1.0f, 0.3f, 0.3f);
 
         glBegin(GL_QUADS);
         glColor4f(c.x, c.y, c.z, 1.0f);
