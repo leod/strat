@@ -50,6 +50,11 @@ Map Map::generate(size_t sizeX, size_t sizeY,
     return std::move(map); 
 }
 
+void Map::crater(const Pos &p, size_t depth) {
+    GridPoint &gp(point(p));
+    gp.growthTarget = -static_cast<int>(std::min(gp.height, depth));
+    gp.growthPerS = Fixed(5);
+}
 
 void Map::raise(const Pos &p, const Pos &s) {
     size_t maxRectHeight = 0;
@@ -66,24 +71,32 @@ void Map::raise(const Pos &p, const Pos &s) {
 
     forRectangle(p, s, [&] (GridPoint &p) {
         p.growthTarget = maxRectHeight - p.height;
+        p.growthPerS = Fixed(1);
     });
 }
 
 void Map::tick(Fixed tickLengthS) {
-    Fixed growthPerS = Fixed(1);
-
     for (size_t x = 0; x < sizeX; x++) {
         for (size_t y = 0; y < sizeY; y++) {
             GridPoint &p(point(x, y));
 
-            if (p.growthTarget > 0 && p.growthProgress < Fixed(1)) {
-                p.growthProgress += growthPerS * tickLengthS;
+            assert(static_cast<int>(p.height) + p.growthTarget >= 0);
+
+            if (p.growthTarget != 0 && p.growthProgress < Fixed(1)) {
+                p.growthProgress += p.growthPerS * tickLengthS;
 
                 if (p.growthProgress >= Fixed(1)) {
-                    p.height += 1;
-                    p.growthTarget--;
+                    if (p.growthTarget > 0) {
+                        p.height += 1;
+                        p.growthTarget--;
+                        p.growthCascadeUp = true;
+                    } else if (p.height > 0) {
+                        p.height--;
+                        p.growthTarget++;
+                        p.growthCascadeDown = true;
+                    }
+
                     p.growthProgress -= Fixed(1);
-                    p.growthCascade = true;
                     p.water = Fixed(0);
 
                     if (p.growthTarget == 0) // Stop growing
@@ -97,13 +110,30 @@ void Map::tick(Fixed tickLengthS) {
         for (size_t y = 0; y < sizeY; y++) {
             GridPoint &p(point(x, y));
 
-            if (p.growthCascade) {
+            if (p.growthCascadeUp) {
                 forNeighbors(Map::Pos(x, y), [&] (GridPoint &n) {
-                    if (n.height + n.growthTarget + 1 < p.height)
+                    // For every neighbor that is more than 1 height lower than us,
+                    if (n.height + n.growthTarget + 1 < p.height) {
+                        // raise their height, so that the height difference is at most 1
                         n.growthTarget += p.height - (n.height + n.growthTarget + 1);
+                        n.growthPerS = p.growthPerS;
+                    }
                 });
 
-                p.growthCascade = false;
+                p.growthCascadeUp = false;
+            }
+            if (p.growthCascadeDown) {
+                forNeighbors(Map::Pos(x, y), [&] (GridPoint &n) {
+                    // For every neighbor that is more than 1 height higher than us,
+                    if (n.height + n.growthTarget > p.height + 1) {
+                        // lower their height, so that the height difference is at most 1
+                        n.growthTarget += static_cast<int>(p.height + 1) -
+                                          static_cast<int>(n.height + n.growthTarget);
+                        n.growthPerS = p.growthPerS;
+                    }
+                });
+
+                p.growthCascadeDown = false;
             }
         }
     }

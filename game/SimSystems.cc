@@ -39,12 +39,11 @@ void FlyingObjectSystem::tick(SimState &state) {
             flyingObject->progress += state.getTickLengthS() * progressPerSecond;
 
             if (flyingObject->progress > Fixed(1)) {
+                state.events.emit<FlyingObjectLanded>(entity);
                 state.entities.destroy(entity.id());
                 continue;
             }
         }
-
-        //std::cout << (float)flyingObject->progress << std::endl;
     }
 }
 
@@ -55,5 +54,21 @@ void FlyingResourceSystem::configure(entityx::EventManager &events) {
 void FlyingResourceSystem::receive(const FlyingObjectLanded &event) {
     if (auto resource = event.entity.component<FlyingResource>()) {
             
+    }
+}
+
+void RocketSystem::configure(entityx::EventManager &events) {
+    events.subscribe<FlyingObjectLanded>(*this);
+}
+
+void RocketSystem::receive(const FlyingObjectLanded &event) {
+    auto flyingObject(event.entity.component<FlyingObject>());
+    assert(flyingObject);
+
+    if (auto rocket = event.entity.component<Rocket>()) {
+        Map::Pos p(flyingObject->toPosition);
+        assert(map.isPoint(p));
+
+        map.crater(p, 3);
     }
 }

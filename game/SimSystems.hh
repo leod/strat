@@ -20,4 +20,16 @@ struct FlyingResourceSystem : entityx::Receiver<FlyingResourceSystem> {
     void receive(const FlyingObjectLanded &);
 };
 
+struct RocketSystem : entityx::Receiver<RocketSystem> {
+    RocketSystem(Map &map)
+        : map(map) {
+    }
+
+    void configure(entityx::EventManager &);
+    void receive(const FlyingObjectLanded &);
+
+private:
+    Map &map;
+};
+
 #endif

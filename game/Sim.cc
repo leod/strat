@@ -3,9 +3,12 @@
 #include "Map.hh"
 
 Sim::Sim(const GameSettings &settings)
-    : state(settings) {
+    : state(settings),
+      rocketSystem(state.getMap()) {
     state.raiseWaterLevel();
     state.raiseWaterLevel();
+
+    rocketSystem.configure(state.events);
 }
 
 void Sim::runTick(const std::vector<Order> &orders) {
@@ -19,6 +22,7 @@ void Sim::runTick(const std::vector<Order> &orders) {
 
     minerBuildingSystem.tick(state);
     flyingObjectSystem.tick(state);
+    //rocketSystem.tick(state);
 }
 
 const SimState &Sim::getState() const {

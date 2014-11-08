@@ -64,8 +64,8 @@ static vec3 bezier(const vec3 &a, const vec3 &b,
                         float height, float t) {
     // Bezier interpolation
     vec3 m((a.x + b.x) * 0.5,
-                (a.y + b.y) * 0.5,
-                (a.z + b.z) * 0.5f + height);
+           (a.y + b.y) * 0.5,
+           (a.z + b.z) * 0.5f + height);
 
     vec3 a_to_m(m - a);
     vec3 da(a + a_to_m * t);

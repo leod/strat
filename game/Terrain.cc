@@ -7,7 +7,7 @@
 #include <cmath>
 #include <GL/glu.h>
 
-#define POINT(x,y) glm::vec3(x, y, map.point(x, y).height + map.point(x,y).growthProgress)
+#define POINT(x,y) glm::vec3(x, y, map.point(x, y).height + (map.point(x,y).growthTarget < 0 ? -1 : 1) * map.point(x,y).growthProgress)
 
 struct Vertex {
     glm::vec3 position, color, normal;

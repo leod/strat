@@ -43,6 +43,7 @@ private:
 
     MinerBuildingSystem minerBuildingSystem;
     FlyingObjectSystem flyingObjectSystem;
+    RocketSystem rocketSystem;
 };
 
 #endif

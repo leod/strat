@@ -13,9 +13,12 @@ struct GridPoint {
     size_t height;
 
     // Progress of heightening
-    size_t growthTarget;
+    int growthTarget;
     Fixed growthProgress; // 0 <= growthProgress <= growthTarget
-    bool growthCascade;
+    bool growthCascadeUp;
+    bool growthCascadeDown;
+
+    Fixed growthPerS;
 
     entityx::Entity entity;
 
@@ -24,7 +27,8 @@ struct GridPoint {
     GridPoint()
         : height(0),
           growthTarget(0), growthProgress(0),
-          growthCascade(false),
+          growthCascadeUp(false),
+          growthCascadeDown(false),
           entity(),
           water(0) {
     }
@@ -116,6 +120,7 @@ struct Map {
                 f(point(x, y));
     }
 
+    void crater(const Pos &p, size_t depth);
     void raise(const Pos &p, const Pos &s);
     void tick(Fixed tickLengthS);
 
