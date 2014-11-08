@@ -56,6 +56,8 @@ struct SimState : entityx::EntityX {
     PlayerState &getPlayer(PlayerId);
     const PlayerState &getPlayer(PlayerId) const;
 
+    entityx::Entity getGameObject(ObjectId) const;
+
     // Tick length in seconds
     Fixed getTickLengthS() const;
 
@@ -80,6 +82,7 @@ private:
     Fixed time;
 
     size_t waterLevel;
+
 
     static PlayerMap playersFromSettings(const GameSettings &);
 };

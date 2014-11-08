@@ -125,7 +125,6 @@ void RenderBuildingSystem::render(entityx::EntityManager &entities) {
                 glBegin(GL_LINE_LOOP);
                 glColor3f(0.0f, 0.0f, 1.0f);
 
-
                 for (float i = 0.0f; i < 2*M_PI; i += 2*M_PI / 360) {
                     glVertex3f(cos(i) * radius, sin(i) * radius, 0.0f);
                 }
@@ -135,8 +134,6 @@ void RenderBuildingSystem::render(entityx::EntityManager &entities) {
                 glPopMatrix();
             }
         }
-
-        glPopMatrix();
     }
 
     glEnable(GL_CULL_FACE);

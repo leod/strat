@@ -211,6 +211,14 @@ void Input::onMouseButton(GLFWwindow *window,
                         self->mode = Input::DefaultMode();
                     }
                 }
+
+                if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_2) {
+                    Order order(Order::ATTACK);
+                    order.attack.x = self->cursor.x;
+                    order.attack.y = self->cursor.y;
+                    order.attack.objectId = mode.entity.component<GameObject>()->getId();
+                    self->client.order(order);
+                }
             },
 
             [&](const Input::MapSelectionMode &mode) {

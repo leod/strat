@@ -140,6 +140,19 @@ bool SimState::isOrderValid(const Order &order) const {
                          });
         return valid;
     }
+    
+    case Order::ATTACK: {
+        if (!map.isPoint(order.attack.x, order.attack.y))
+            return false;
+
+        entityx::Entity entity = getGameObject(order.attack.objectId);
+        if (!entity)
+            return false;
+
+        Building::Handle building = entity.component<Building>();
+        return building && building->getType() == BUILDING_TOWER;
+    }
+
     default:
         return false;
     }
@@ -185,6 +198,17 @@ void SimState::runOrder(const Order &order) {
         return;
     }
 
+    case Order::ATTACK: {
+        std::cout << "Got attack order at x=" << order.attack.x
+                  << ", y=" << order.attack.y
+                  << ", from=" << order.attack.objectId << std::endl;
+
+        entityx::Entity entity = getGameObject(order.attack.objectId);
+
+        addRocket(entity, Map::Pos(order.attack.x, order.attack.y));
+        return;
+    }
+
     default:
         return;
     }
@@ -201,6 +225,24 @@ const PlayerState &SimState::getPlayer(PlayerId id) const {
     assert(it != players.end());
     return it->second;
 }
+
+entityx::Entity SimState::getGameObject(ObjectId id) const {
+    entityx::Entity result;
+    GameObject::Handle gameObject;
+
+    auto ents = const_cast<entityx::EntityManager *>(&entities); // I'm sorry...
+
+    // TODO: Maybe switch to a std::map<ObjectId, Entity> at some point
+    for (auto entity : ents->entities_with_components(gameObject)) {
+        if (gameObject->getId() == id) {
+            assert(!result);
+            result = entity;
+        }
+    }
+
+    return result;
+}
+
 
 Fixed SimState::getTickLengthS() const {
     return Fixed(settings.tickLengthMs) / Fixed(1000);
