@@ -12,6 +12,7 @@
 
 #include <algorithm>
 
+struct Config;
 struct Client;
 struct Sim;
 struct TerrainMesh;
@@ -53,68 +54,17 @@ struct Input : entityx::Receiver<Input> {
         std::vector<entityx::Entity> entities;
         double lastSelectionTime;
 
-        BuildingSelectedMode(entityx::Entity entity, double time)
-            : entities(1, entity), lastSelectionTime(time) {
-        }
-
+        BuildingSelectedMode(entityx::Entity entity, double time);
         BuildingSelectedMode(const std::vector<entityx::Entity> &entities,
-                             double time)
-            : entities(entities), lastSelectionTime(time) {
-            assert(entities.size() > 0);
-        }
+                             double time);
 
-        BuildingSelectedMode add(entityx::Entity entity, double time) const {
-            assert(false);
-            std::vector<entityx::Entity> newEntities(entities);
-
-            if (std::find(newEntities.begin(), newEntities.end(), entity) ==
-                newEntities.end()) {
-                newEntities.push_back(entity);
-            }
-
-            return BuildingSelectedMode(newEntities, time);
-        }
-
+        BuildingSelectedMode add(entityx::Entity entity, double time) const;
         BuildingSelectedMode add(const std::vector<entityx::Entity> es,
-                                 double time) const {
-            std::vector<entityx::Entity> newEntities(entities);
+                                 double time) const;
 
-            for (auto e : es) {
-                if (std::find(newEntities.begin(), newEntities.end(), e) ==
-                    newEntities.end()) {
-                    for (auto ee : newEntities) assert(ee != e);
-                    newEntities.push_back(e); 
-                }
-            }
+        bool isSelected(entityx::Entity e) const;
 
-            return BuildingSelectedMode(newEntities, time);
-        }
-
-        bool isSelected(entityx::Entity e) const {
-            assert(std::count(entities.begin(), entities.end(), entityx::Entity()) == 0);
-            return std::find(entities.begin(), entities.end(), e) !=
-                    entities.end();
-        }
-
-        BuildingSelectedMode remove(entityx::Entity e) const {
-            std::vector<entityx::Entity> newEntities(entities);
-            double time = lastSelectionTime;
-
-            std::vector<entityx::Entity>::iterator position =
-                std::find(newEntities.begin(), newEntities.end(), e);
-
-            if (position == newEntities.end() - 1)
-                time = 0;
-
-            if (position != newEntities.end())
-                newEntities.erase(position); 
-
-            std::vector<entityx::Entity>::iterator position2 =
-                std::find(newEntities.begin(), newEntities.end(), e);
-            assert(position2 == newEntities.end());
-
-            return BuildingSelectedMode(newEntities, time);
-        }
+        BuildingSelectedMode remove(entityx::Entity e) const;
     };
 
     //                  release left mouse button
@@ -137,16 +87,16 @@ struct Input : entityx::Receiver<Input> {
 
     // Camera information
     struct View {
-        glm::vec3 position;
-        glm::vec3 target;
+        glm::vec3 position, target;
+        float angle, distance;
 
-        float angle;
-        float distance;
+        glm::mat4 projectionMat, cameraMat;
 
         View();
     };
 
-    Input(GLFWwindow *, Client &, entityx::EventManager &, const TerrainMesh &);
+    Input(const Config &, GLFWwindow *, Client &, entityx::EventManager &,
+          const TerrainMesh &);
     ~Input();
 
     const View &getView() const;
@@ -158,6 +108,7 @@ struct Input : entityx::Receiver<Input> {
     void receive(const entityx::EntityDestroyedEvent &);
 
 private:
+    const Config &config;
     GLFWwindow *window;
 
     Client &client;

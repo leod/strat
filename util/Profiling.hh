@@ -1,12 +1,11 @@
 #pragma once
 
-#include <SFML/System.hpp>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
-#include "core/Time.hpp"
+#include <vector>
 
 #define USE_PROFILING
-
-namespace game {
 
 #ifdef USE_PROFILING
 #   define PROFILE(name) static ProfilingData _profilingData(#name); \
@@ -19,10 +18,12 @@ struct ProfilingData {
     char const* const name;
 
     int numCalls;
-    Time time;
+    double time;
 
     ProfilingData* const parent;
     std::vector<ProfilingData*> children;
+
+    bool isRoot;
 
     ProfilingData(char const* name);
 
@@ -33,16 +34,15 @@ struct ProfilingData {
 
 private:
     friend struct ProfilingImpl;
-    static ProfilingData* current;
+    static ProfilingData* current; // the block we are currently in
 };
 
+// Updates given ProfilingData according to time elapsed
 struct ProfilingImpl {
     ProfilingImpl(ProfilingData&);
     ~ProfilingImpl();
 
 private:
     ProfilingData& data;
-    Clock clock;
+    double startTime;
 };
-
-} // namespace game

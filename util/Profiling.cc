@@ -1,13 +1,12 @@
 #include "util/Profiling.hh"
 
 #include <sstream>
+#include <algorithm>
 
-#include "util/Log.hpp"
-
-namespace game {
+#include "util/Log.hh"
 
 ProfilingData::ProfilingData(char const* name)
-    : name(name), numCalls(0), time(), parent(current) {
+    : name(name), numCalls(0), time(0), parent(current), isRoot(!current) {
     if (!current)
         roots.push_back(this);
     else
@@ -16,7 +15,7 @@ ProfilingData::ProfilingData(char const* name)
 
 static void recReset(ProfilingData* data) {
     data->numCalls = 0;
-    data->time = Time::Zero;
+    data->time = 0;
 
     for (auto child : data->children)
         recReset(child);
@@ -27,15 +26,15 @@ void ProfilingData::reset() {
         recReset(root);
 }
 
-static void recDump(ProfilingData* data, Time total, int depth) {
+static void recDump(ProfilingData* data, double total, int depth) {
     std::stringstream ss;
 
     for (int i = 0; i < depth; i++)
         ss << "  ";
 
     ss << data->name << ": " << data->numCalls << " calls, "
-       << (float)data->time.asMilliseconds() / data->numCalls << "ms/call, "
-       << (float)data->time.asMilliseconds() / total.asMilliseconds() * 100
+       << data->time * 1000.0f / data->numCalls << "ms/call, "
+       << data->time / total * 100.0f
        << "%";
 
     INFO(profiling) << ss.str();
@@ -45,7 +44,7 @@ static void recDump(ProfilingData* data, Time total, int depth) {
 }
 
 void ProfilingData::dump() {
-    Time total;
+    double total = 0;
     for (auto root : roots)
         total += root->time;
 
@@ -59,23 +58,31 @@ std::vector<ProfilingData*> ProfilingData::roots;
 ProfilingData* ProfilingData::current = nullptr;
 
 ProfilingImpl::ProfilingImpl(ProfilingData& data)
-    : data(data) {
-    if (ProfilingData::current != data.parent)
+    : data(data), startTime(glfwGetTime()) {
+    /*if (ProfilingData::current != data.parent)
         WARN(profiling) << "Inconsistent profiling calls: " 
             << data.name << " was called first from "
             << (data.parent ? data.parent->name : "<root>")
             << " and then from "
             << (ProfilingData::current ?
-                ProfilingData::current->name : "<root>");
+                ProfilingData::current->name : "<root>");*/
+
+    if (ProfilingData::current && data.isRoot) {
+        auto it = std::find(ProfilingData::roots.begin(), ProfilingData::roots.end(), &data);
+        assert(it != ProfilingData::roots.end());
+        ProfilingData::roots.erase(it);
+
+        ProfilingData::current->children.push_back(&data);
+
+        data.isRoot = false;
+    }
 
     ProfilingData::current = &data;
 }
 
 ProfilingImpl::~ProfilingImpl() {
     data.numCalls++;
-    data.time += clock.getElapsedTime();
+    data.time += glfwGetTime() - startTime;
 
     ProfilingData::current = data.parent;
 }
-
-} // namespace game

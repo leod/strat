@@ -4,10 +4,14 @@
 #include "Map.hh"
 #include "Client.hh"
 #include "Terrain.hh"
+#include "Config.hh"
+#include "util/Profiling.hh"
 
 #define GLM_FORCE_RADIANS
 #include <GL/glu.h>
 #include <glm/gtx/rotate_vector.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <inline_variant_visitor/inline_variant.hpp>
 
 #define DOUBLE_CLICK_S 0.4f
@@ -24,29 +28,81 @@ Input::View::View()
 }
 
 // Calculates a ray going from the camera position in the direction the mouse is pointing at
-static Ray calculateViewRay(double mx, double my, const Input::View &view) {
-    GLint viewport[4];
-    GLdouble modelview[16];
-    GLdouble projection[16];
+static Ray calculateViewRay(double mx, double my, int width, int height,
+                            const Input::View &view) {
+    dmat4 modelview(view.cameraMat),
+          projection(view.projectionMat);
+    GLint viewport[4] = { 0, 0, width, height };
+    dvec3 nearP, farP;
 
-    dvec3 nearP;
-    dvec3 farP;
+    {
+        PROFILE(unproject);
 
-    glGetIntegerv(GL_VIEWPORT, viewport);
-    glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
-    glGetDoublev(GL_PROJECTION_MATRIX, projection);
-
-    gluUnProject(mx, viewport[3] - my, 0.0, modelview, projection, viewport,
-                 &nearP.x, &nearP.y, &nearP.z);
-    gluUnProject(mx, viewport[3] - my, 0.1, modelview, projection, viewport,
-                 &farP.x, &farP.y, &farP.z);
+        gluUnProject(mx, viewport[3] - my, 0.0,
+                     value_ptr(modelview), value_ptr(projection), viewport,
+                     &nearP.x, &nearP.y, &nearP.z);
+        gluUnProject(mx, viewport[3] - my, 0.1,
+                     value_ptr(modelview), value_ptr(projection), viewport,
+                     &farP.x, &farP.y, &farP.z);
+    }
 
     return Ray(view.position, vec3(normalize(farP - nearP)));
 }
 
-Input::Input(GLFWwindow *window, Client &client,
+Input::BuildingSelectedMode::BuildingSelectedMode(entityx::Entity entity, double time)
+    : entities(1, entity), lastSelectionTime(time) {
+}
+
+Input::BuildingSelectedMode::BuildingSelectedMode(const std::vector<entityx::Entity> &entities,
+                                                  double time)
+    : entities(entities), lastSelectionTime(time) {
+    assert(entities.size() > 0);
+}
+
+Input::BuildingSelectedMode Input::BuildingSelectedMode::add(const std::vector<entityx::Entity> es,
+                                                             double time) const {
+    std::vector<entityx::Entity> newEntities(entities);
+
+    for (auto e : es) {
+        if (std::find(newEntities.begin(), newEntities.end(), e) ==
+            newEntities.end()) {
+            newEntities.push_back(e); 
+        }
+    }
+
+    return Input::BuildingSelectedMode(newEntities, time);
+}
+
+bool Input::BuildingSelectedMode::isSelected(entityx::Entity e) const {
+    assert(std::count(entities.begin(), entities.end(), entityx::Entity()) == 0);
+    return std::find(entities.begin(), entities.end(), e) !=
+            entities.end();
+}
+
+Input::BuildingSelectedMode Input::BuildingSelectedMode::remove(entityx::Entity e) const {
+    std::vector<entityx::Entity> newEntities(entities);
+    double time = lastSelectionTime;
+
+    std::vector<entityx::Entity>::iterator position =
+        std::find(newEntities.begin(), newEntities.end(), e);
+
+    if (position == newEntities.end() - 1)
+        time = 0;
+
+    if (position != newEntities.end())
+        newEntities.erase(position); 
+
+    std::vector<entityx::Entity>::iterator position2 =
+        std::find(newEntities.begin(), newEntities.end(), e);
+    assert(position2 == newEntities.end());
+
+    return Input::BuildingSelectedMode(newEntities, time);
+}
+
+Input::Input(const Config &config, GLFWwindow *window, Client &client,
              entityx::EventManager &events, const TerrainMesh &terrain)
-    : window(window), client(client), sim(client.getSim()),
+    : config(config), window(window),
+      client(client), sim(client.getSim()),
       terrain(terrain), map(sim.getState().getMap()),
       mode(Input::DefaultMode()),
       scrollSpeed(5.0f) {
@@ -79,12 +135,21 @@ const Map::Pos &Input::getCursor() const {
 }
 
 void Input::update(double dt) {
-    double mx, my;
-    glfwGetCursorPos(window, &mx, &my);
-    mouseRay = calculateViewRay(mx, my, view);
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+
+    {
+        PROFILE(mouse_ray);
+
+        double mx, my;
+        glfwGetCursorPos(window, &mx, &my);
+        mouseRay = calculateViewRay(mx, my, width, height, view);
+    }
 
     // What grid point is the mouse pointing at?
     {
+        PROFILE(pick_terrain);
+
         float mapT;
         Map::Pos p;
         if (terrain.intersectWithRay(mouseRay, p, mapT)) {
@@ -94,6 +159,12 @@ void Input::update(double dt) {
     }
 
     scrollView(dt);
+    
+    {
+        view.projectionMat = perspective<float>(M_PI / 2.0f, width / (float)height,
+                                                1.0f, 5000.0f);                                          
+        view.cameraMat = lookAt(view.position, view.target, vec3(0, 0, 1));
+    }
 }
 
 void Input::receive(const entityx::EntityDestroyedEvent &event) {
@@ -299,6 +370,9 @@ void Input::onMouseButton(GLFWwindow *window,
 }
 
 void Input::onKey(GLFWwindow *window, int key, int, int action, int mods) {
+    if (action == GLFW_PRESS && key == GLFW_KEY_P)
+        ProfilingData::dump();
+
     if (Input *self = g_input) {
         match(self->mode,
             [&](const Input::DefaultMode &) {

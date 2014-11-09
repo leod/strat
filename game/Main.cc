@@ -6,6 +6,7 @@
 #include "Input.hh"
 #include "Terrain.hh"
 #include "util/Log.hh"
+#include "util/Profiling.hh"
 
 #include <entityx/entityx.h>
 
@@ -58,7 +59,7 @@ int main(int argc, char *argv[]) {
     }
 
     Client client("leo");
-    client.connect("192.168.11.41", 1234);
+    client.connect("localhost", 1234);
 
     std::cout << "Waiting for the game to start" << std::endl;
     while (!client.isStarted()) {
@@ -74,7 +75,7 @@ int main(int argc, char *argv[]) {
     opengl::TextureManager textures;
     TerrainMesh terrainMesh(map, Map::Pos(16, 16));
 
-    Input input(window, client, sim.getEvents(), terrainMesh);
+    Input input(config, window, client, sim.getEvents(), terrainMesh);
     const Input::View &view(input.getView());
 
     RenderBuildingSystem renderBuildingSystem(map, input);
@@ -89,19 +90,35 @@ int main(int argc, char *argv[]) {
 
     bool quit = false;
     while (!quit && !glfwWindowShouldClose(window)) {
+        PROFILE(main);
+
         double dt = glfwGetTime() - frameStartTime;
         frameStartTime = glfwGetTime();
 
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         {
-            input.update(dt);
-            client.update(dt);
-            terrainMesh.update();
+            PROFILE(update);
+
+            {
+                PROFILE(input);
+                input.update(dt);
+            }
+            {
+                PROFILE(client);
+                client.update(dt);
+            }
+            {
+                PROFILE(terrain);
+                terrainMesh.update();
+            }
         }
 
         {
+            PROFILE(draw);
+
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
             setupGraphics(config, view);
             terrainMesh.draw();
             terrainMesh.drawWater();

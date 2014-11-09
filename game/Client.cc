@@ -1,5 +1,6 @@
 #include "Client.hh"
 #include "common/BitStream.hh"
+#include "util/Profiling.hh"
 
 #include <GLFW/glfw3.h>
 

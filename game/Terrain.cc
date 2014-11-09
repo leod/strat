@@ -1,5 +1,7 @@
 #include "Terrain.hh"
+
 #include "Math.hh"
+#include "util/Profiling.hh"
 
 #include <limits>
 #include <cmath>

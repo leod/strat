@@ -272,15 +272,17 @@ void setupGraphics(const Config &config, const Input::View &view) {
     
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(60.0f,
+    /*gluPerspective(60.0f,
         config.screenWidth / static_cast<float>(config.screenHeight),
-        1.0f, 5000.0f); 
+        1.0f, 5000.0f); */
+    glMultMatrixf(glm::value_ptr(view.projectionMat));
     
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    gluLookAt(view.position.x, view.position.y, view.position.z,
+    /*gluLookAt(view.position.x, view.position.y, view.position.z,
               view.target.x, view.target.y, view.target.z,
-              0.0, 0.0, 1.0);
+              0.0, 0.0, 1.0);*/
+    glMultMatrixf(glm::value_ptr(view.cameraMat));
 
     //GLfloat mat_specular[] = { 0.25, 0.25, 0.25, 1.0 };
     GLfloat mat_specular[] = {0,0,0,0};
