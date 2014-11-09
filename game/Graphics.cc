@@ -187,12 +187,12 @@ void RenderRocketSystem::render(entityx::EntityManager &entities) {
 
         vec3 p(bezier(vec3(flyingObject->fromPosition),
                            vec3(flyingObject->toPosition),
-                           flyingObject->distance.toFloat() * 0.5f,
+                           flyingObject->distance.toFloat() * 0.25f,
                            t));
         vec3 p2(bezier(vec3(flyingObject->fromPosition),
                             vec3(flyingObject->toPosition),
-                            flyingObject->distance.toFloat() * 0.5f,
-                            t + 0.01f));
+                            flyingObject->distance.toFloat() * 0.25f,
+                            t + 0.001f));
         vec3 c(1.0f, 0.0f, 0.0f);
 
         vec3 d(normalize(p2 - p));

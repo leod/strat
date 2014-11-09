@@ -14,6 +14,8 @@
 struct Vertex {
     glm::vec3 position, color, normal;
 
+    Vertex() {}
+
     Vertex(glm::vec3 position,
            glm::vec3 color,
            glm::vec3 normal)
@@ -29,7 +31,7 @@ struct TerrainPatch {
                  const Map::Pos &size); 
 
     void init();
-    void update();
+    void update(bool initial = false);
     void draw();
     void drawWater();
 
@@ -62,23 +64,36 @@ TerrainMesh::~TerrainMesh() {
 
 void TerrainPatch::init() {
     glGenBuffers(1, &vertexBuffer);
-    update();
+    update(true);
 }
 
-void TerrainPatch::update() {
+void TerrainPatch::update(bool initial) {
+    bool dirty = false;
+    for (size_t x = position.x; x < position.x + size.x; x++) {
+        for (size_t y = position.y; y < position.y + size.y; y++) {
+            if (map.point(x, y).dirty) {
+                dirty = true;
+                map.point(x, y).dirty = false;
+            }
+        }
+    }
+
+    if (!dirty && !initial) return;
+
     aabb.max.z = 0;
+
+    // Two triangles per grid point
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * size.x * size.y * 6, NULL,
+                 GL_DYNAMIC_DRAW);
+    Vertex *vs = reinterpret_cast<Vertex *>(glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE));
+
+    size_t j = 0;
+
     for (size_t x = position.x; x < position.x + size.x; x++) {
         for (size_t y = position.y; y < position.y + size.y; y++) {
             if (map.point(x,y).height > aabb.max.z)
                 aabb.max.z = map.point(x,y).height;
-        }
-    }
-
-    vertices.clear();
-
-    for (size_t x = position.x; x < position.x + size.x; x++) {
-        for (size_t y = position.y; y < position.y + size.y; y++) {
-            // Two triangles per grid point
 
             glm::vec3 a(POINT(x,y)), b(POINT(x+1,y)),
                       c(POINT(x+1,y+1)), d(POINT(x,y+1));
@@ -119,19 +134,31 @@ void TerrainPatch::update() {
             glm::vec3 n1(glm::normalize(glm::cross(vb1 - va1, vc1 - va1)));
             glm::vec3 n2(glm::normalize(glm::cross(vb2 - va2, vc2 - va2)));
 
-            vertices.emplace_back(va1, color(va1.z), n1);
-            vertices.emplace_back(vb1, color(vb1.z), n1);
-            vertices.emplace_back(vc1, color(vc1.z), n1);
+            size_t k = (x - position.x) * (size.y * 6) + (y - position.y) * 6;
+            assert(k < sizeof(Vertex) * size.x * size.y * 6);
 
-            vertices.emplace_back(va2, color(va2.z), n2);
-            vertices.emplace_back(vb2, color(vb2.z), n2);
-            vertices.emplace_back(vc2, color(vc2.z), n2);
+            k = j;
+            assert(k + 5 < size.x * size.y * 6);
+
+            Vertex k0(va1, color(va1.z), n1),
+                   k1(vb1, color(vb1.z), n1),
+                   k2(vc1, color(vc1.z), n1),
+                   k3(va2, color(va2.z), n2),
+                   k4(vb2, color(vb2.z), n2),
+                   k5(vc2, color(vc2.z), n2);
+
+            memcpy(&vs[0] + k + 0, &k0, sizeof(Vertex));
+            memcpy(&vs[0] + k + 1, &k1, sizeof(Vertex));
+            memcpy(&vs[0] + k + 2, &k2, sizeof(Vertex));
+            memcpy(&vs[0] + k + 3, &k3, sizeof(Vertex));
+            memcpy(&vs[0] + k + 4, &k4, sizeof(Vertex));
+            memcpy(&vs[0] + k + 5, &k5, sizeof(Vertex));
+
+            j += 6;
         }
     }
-    
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(),
-        &vertices[0], GL_STATIC_DRAW);
+
+    glUnmapBuffer(GL_ARRAY_BUFFER);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -149,19 +176,18 @@ void TerrainPatch::draw() {
     glNormalPointer(GL_FLOAT, sizeof(Vertex),
         reinterpret_cast<const void *>(offsetof(Vertex, normal)));
 
-    glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+    glDrawArrays(GL_TRIANGLES, 0, size.x * size.y * 6);
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-
 }
 
 bool TerrainPatch::intersectWithRay(const Ray &ray, Map::Pos &point,
                                     float &tMin) const {
-    /*if (!aabb.intersectWithRay(ray, 0.1f, 5000.0f))
-        return false;*/
+    if (!aabb.intersectWithRay(ray, 0.1f, 5000.0f))
+        return false;
 
 #define ROUND(x) floor((x) + 0.5f)
     tMin = std::numeric_limits<float>::infinity();
@@ -204,12 +230,12 @@ void TerrainPatch::drawWater() {
             c.z += dz + map.point(x,y+1).water;
             d.z += dz + map.point(x+1,y+1).water;
 
-            float ca = map.point(x,y).water > 1 ? 1 : map.point(x,y).water;
-            float cb = map.point(x+1,y).water > 1 ? 1 : map.point(x+1,y).water;
-            float cc = map.point(x,y+1).water > 1 ? 1 : map.point(x,y+1).water;
-            float cd = map.point(x+1,y+1).water > 1 ? 1 : map.point(x+1,y+1).water;
+            float ca = map.point(x,y).water > 1 ? 1 : map.point(x,y).water.toFloat();
+            float cb = map.point(x+1,y).water > 1 ? 1 : map.point(x+1,y).water.toFloat();
+            float cc = map.point(x,y+1).water > 1 ? 1 : map.point(x,y+1).water.toFloat();
+            float cd = map.point(x+1,y+1).water > 1 ? 1 : map.point(x+1,y+1).water.toFloat();
 
-#define ALPHA(x) (0.40f + sin(x)/2)
+#define ALPHA(x) (0.65f + (x)/3.0f)
 
             float minw = 0.1;
 
@@ -253,15 +279,20 @@ TerrainMesh::TerrainMesh(const Map &map, const Map::Pos &patchSize)
     assert(map.getSizeX() % patchSize.x == 0);
     assert(map.getSizeY() % patchSize.y == 0);
 
-    /*for (size_t x = 0; x < map.getSizeX() / patchSize.x - 1; x++) {
-        for (size_t y = 0; y < map.getSizeY() / patchSize.y - 1; y++) {
-            std::cout << x*patchSize.x << "," << y*patchSize.y << std::endl;
-            patches.push_back(new TerrainPatch(map, Map::Pos(x*patchSize.x,y*patchSize.y),
-                                               patchSize));
-        }
-    }*/
+    for (size_t x = 0; x < map.getSizeX() / patchSize.x; x++) {
+        size_t px = x > 0 ? x * patchSize.x - 1 : 0;
+        size_t wx = x > 0 ? patchSize.x + 1 : patchSize.x;
 
-    patches.push_back(new TerrainPatch(map, Map::Pos(0, 0), map.getSize()-Map::Pos(1,1)));
+        for (size_t y = 0; y < map.getSizeY() / patchSize.y; y++) {
+            size_t py = y > 0 ? y * patchSize.y - 1 : 0;
+            size_t wy = y > 0 ? patchSize.y + 1 : patchSize.y;
+
+            patches.push_back(new TerrainPatch(map, Map::Pos(px, py),
+                                               Map::Pos(wx-1, wy-1)));
+        }
+    }
+
+    //patches.push_back(new TerrainPatch(map, Map::Pos(0, 0), map.getSize()-Map::Pos(1,1)));
 }
 
 void TerrainMesh::update() {

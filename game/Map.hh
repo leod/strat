@@ -14,6 +14,8 @@ struct GridPoint {
 
     size_t height;
 
+    mutable bool dirty;
+
     // Progress of heightening
     int growthTarget;
     Fixed growthProgress; // 0 <= growthProgress <= growthTarget
@@ -24,14 +26,17 @@ struct GridPoint {
 
     entityx::Entity entity;
 
+    bool waterSource;
     Fixed water;
 
     GridPoint()
         : height(0),
+          dirty(false),
           growthTarget(0), growthProgress(0),
           growthCascadeUp(false),
           growthCascadeDown(false),
           entity(),
+          waterSource(false),
           water(0) {
     }
 

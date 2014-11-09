@@ -126,7 +126,7 @@ int main() {
     settings.randomSeed = static_cast<uint32_t>(time(NULL));
     settings.mapW = 256;
     settings.mapH = 256;
-    settings.heightLimit = 25;
+    settings.heightLimit = 15;
     settings.tickLengthMs = 50;
 
     // Wait for this number of players before starting the game

@@ -7,7 +7,6 @@ Sim::Sim(const GameSettings &settings)
     : state(settings),
       rocketSystem(state.getMap()) {
     state.raiseWaterLevel();
-    state.raiseWaterLevel();
 
     rocketSystem.configure(state.events);
 }

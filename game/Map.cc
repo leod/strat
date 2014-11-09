@@ -85,6 +85,7 @@ void Map::tick(entityx::EntityManager &entities, Fixed tickLengthS) {
     for (size_t x = 0; x < sizeX; x++) {
         for (size_t y = 0; y < sizeY; y++) {
             GridPoint &p(point(x, y));
+            p.dirty = false;
 
             assert(static_cast<int>(p.height) + p.growthTarget >= 0);
 
@@ -94,6 +95,7 @@ void Map::tick(entityx::EntityManager &entities, Fixed tickLengthS) {
                 }
 
                 p.growthProgress += p.growthPerS * tickLengthS;
+                p.dirty = true;
 
                 if (p.growthProgress >= Fixed(1)) {
                     if (p.growthTarget > 0) {

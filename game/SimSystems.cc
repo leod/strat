@@ -72,6 +72,8 @@ void RocketSystem::receive(const FlyingObjectLanded &event) {
         map.crater(p, 2);
 
         map.forNeighbors(p, [&] (GridPoint &gp) {
+            if (gp.water > Fixed(0))
+                gp.water = Fixed(1) / Fixed(9);
             map.crater(gp.pos, 1);
         });
     }

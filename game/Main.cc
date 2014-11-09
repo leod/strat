@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
     const InterpState &interp(client.getInterp());
 
     opengl::TextureManager textures;
-    TerrainMesh terrainMesh(map, Map::Pos(16, 16));
+    TerrainMesh terrainMesh(map, Map::Pos(32, 32));
 
     Input input(config, window, client, sim.getEvents(), terrainMesh);
     const Input::View &view(input.getView());
