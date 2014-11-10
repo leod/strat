@@ -129,7 +129,11 @@ struct Map {
 
     void crater(const Pos &p, size_t depth);
     void raise(const Pos &p, const Pos &s);
+
     void tick(entityx::EntityManager &, Fixed tickLengthS);
+
+    void raiseWaterLevel(size_t waterLevel);
+    void waterTick(Fixed tickLengthS, size_t waterLevel);
 
 private:
     size_t sizeX;
@@ -138,6 +142,15 @@ private:
     size_t maxHeight;
 
     std::vector<GridPoint> points; // 2d array
+
+    struct PosLess {
+        bool operator()(const Pos &a, const Pos &b) {
+            return a.x < b.x || (a.x == b.x && a.y < b.y);
+        }
+    };
+
+    std::set<Pos, PosLess> growingPoints;
+    std::set<Pos, PosLess> activeWater;
 };
 
 #endif

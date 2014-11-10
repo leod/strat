@@ -116,21 +116,42 @@ int main(int argc, char *argv[]) {
         {
             PROFILE(draw);
 
-            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            {
+                PROFILE(setup);
 
-            setupGraphics(config, view);
-            terrainMesh.draw();
-            terrainMesh.drawWater();
+                glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+                setupGraphics(config, view);
+            }
+
+            {
+                PROFILE(terrain);
+                terrainMesh.draw();
+            }
+
+            {
+                PROFILE(water);
+                terrainMesh.drawWater();
+            }
         
-            renderBuildingSystem.render(sim.getEntities());
-            renderFlyingResourceSystem.render(sim.getEntities());
-            renderRocketSystem.render(sim.getEntities());
-            renderTreeSystem.render(sim.getEntities());
+            {
+                PROFILE(objects);
+                renderBuildingSystem.render(sim.getEntities());
+                renderFlyingResourceSystem.render(sim.getEntities());
+                renderRocketSystem.render(sim.getEntities());
+                renderTreeSystem.render(sim.getEntities());
+            }
 
-            drawCursor(map, input);
+            {
+                PROFILE(cursor);
+                drawCursor(map, input);
+            }
 
-            glfwSwapBuffers(window);
+            {
+                PROFILE(swap);
+                glfwSwapBuffers(window);
+            }
         }
 
         glfwPollEvents();

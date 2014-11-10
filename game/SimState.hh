@@ -68,7 +68,9 @@ struct SimState : entityx::EntityX {
     void addRocket(Entity fromEntity, Map::Pos toPos);
 
     void raiseWaterLevel();
-    void waterTick();
+    size_t getWaterLevel() const { return waterLevel; }
+
+    void tick();
 
 private:
     const GameSettings &settings;
@@ -82,7 +84,6 @@ private:
     Fixed time;
 
     size_t waterLevel;
-
 
     static PlayerMap playersFromSettings(const GameSettings &);
 };

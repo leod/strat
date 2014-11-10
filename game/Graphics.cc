@@ -13,7 +13,8 @@
 
 using namespace glm;
 
-#define checkError() printOglError(__FILE__, __LINE__)
+//#define checkError() printOglError(__FILE__, __LINE__)
+#define checkError()
 
 static vec3 playerColors[4] = {
     vec3(0.0, 1.0, 1.0),

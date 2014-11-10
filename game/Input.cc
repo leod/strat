@@ -35,16 +35,12 @@ static Ray calculateViewRay(double mx, double my, int width, int height,
     GLint viewport[4] = { 0, 0, width, height };
     dvec3 nearP, farP;
 
-    {
-        PROFILE(unproject);
-
-        gluUnProject(mx, viewport[3] - my, 0.0,
-                     value_ptr(modelview), value_ptr(projection), viewport,
-                     &nearP.x, &nearP.y, &nearP.z);
-        gluUnProject(mx, viewport[3] - my, 0.1,
-                     value_ptr(modelview), value_ptr(projection), viewport,
-                     &farP.x, &farP.y, &farP.z);
-    }
+    gluUnProject(mx, viewport[3] - my, 0.0,
+                 value_ptr(modelview), value_ptr(projection), viewport,
+                 &nearP.x, &nearP.y, &nearP.z);
+    gluUnProject(mx, viewport[3] - my, 0.1,
+                 value_ptr(modelview), value_ptr(projection), viewport,
+                 &farP.x, &farP.y, &farP.z);
 
     return Ray(view.position, vec3(normalize(farP - nearP)));
 }
