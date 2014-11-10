@@ -16,7 +16,7 @@ bool intersectTriangleWithRay(const Ray &ray,
     glm::vec3 pvec = glm::cross(ray.direction, edge2);
     float det = glm::dot(edge1, pvec);
 
-    if (det > 0.0000001 && det < 0.0000001)
+    if (det > -0.0000001 && det < 0.0000001)
         return false;
 
     float invDet = 1.0 / det;

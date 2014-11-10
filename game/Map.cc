@@ -188,7 +188,7 @@ void Map::waterTick(Fixed tickLengthS, size_t waterLevel) {
             GridPoint &p(map.point(x, y));
 
             if (p.height < waterLevel) {
-                if (p.water < Fixed(waterLevel - p.height))*/) {
+                if (p.water < Fixed(waterLevel - p.height))) {
                     map.forNeighbors(Map::Pos(x, y), [&] (GridPoint &p2) {
                         if (p2.water == Fixed(0)) return;
                         if (Fixed(p2.height) + p2.water < Fixed(p.height) + p.water) return;

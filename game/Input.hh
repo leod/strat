@@ -59,7 +59,7 @@ struct Input : entityx::Receiver<Input> {
                              double time);
 
         BuildingSelectedMode add(entityx::Entity entity, double time) const;
-        BuildingSelectedMode add(const std::vector<entityx::Entity> es,
+        BuildingSelectedMode add(const std::vector<entityx::Entity> &es,
                                  double time) const;
 
         bool isSelected(entityx::Entity e) const;

@@ -55,7 +55,7 @@ Input::BuildingSelectedMode::BuildingSelectedMode(const std::vector<entityx::Ent
     assert(entities.size() > 0);
 }
 
-Input::BuildingSelectedMode Input::BuildingSelectedMode::add(const std::vector<entityx::Entity> es,
+Input::BuildingSelectedMode Input::BuildingSelectedMode::add(const std::vector<entityx::Entity> &es,
                                                              double time) const {
     std::vector<entityx::Entity> newEntities(entities);
 
