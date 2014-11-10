@@ -180,36 +180,39 @@ void Map::raiseWaterLevel(size_t waterLevel) {
 }
 
 void Map::waterTick(Fixed tickLengthS, size_t waterLevel) {
-    Fixed flowPerS(Fixed(4) / Fixed(1));
+    Fixed flowPerS(Fixed(3) / Fixed(1));
 
     // Calculate water flow from grid point to grid point
-    for (size_t x = 0; x < map.getSizeX(); x++) {
-        for (size_t y = 0; y < map.getSizeY(); y++) {
-            GridPoint &p(map.point(x, y));
+    for (size_t x = 0; x < getSizeX(); x++) {
+        for (size_t y = 0; y < getSizeY(); y++) {
+            GridPoint &p(point(x, y));
 
-            if (p.height < waterLevel) {
-                if (p.water < Fixed(waterLevel - p.height))) {
-                    map.forNeighbors(Map::Pos(x, y), [&] (GridPoint &p2) {
-                        if (p2.water == Fixed(0)) return;
-                        if (Fixed(p2.height) + p2.water < Fixed(p.height) + p.water) return;
+            if (p.water > 0) {
+                forNeighbors(Map::Pos(x, y), [&] (GridPoint &p2) {
+                    if (Fixed(p.height) + p.water < Fixed(p2.height) + p2.water)
+                        return;
 
-                        Fixed value((Fixed(p2.height) + p2.water) - (Fixed(p.height) + p.water));
+                    Fixed value((Fixed(p.height) + p.water - (Fixed(p2.height) + p2.water)));
 
-                        value *= flowPerS * getTickLengthS();
+                    if (value > Fixed(1))
+                        value = Fixed(1);
 
-                        p2.water -= value;
-                        p.water += value;
-                    });
-                }
-                
-                if (p.water < Fixed(waterLevel - p.height) && p.waterSource) {
-                    // This point has been flooded for a longer time,
-                    // but hasn't risen to the waterLevel yet
+                    value *= flowPerS * tickLengthS;
+                    if (value > p.water) value = p.water;
 
-                    p.water += Fixed(1) * getTickLengthS();
-                }
+                    p.water -= value * Fixed(2) / Fixed(3);
+                    p2.water += value;
+                    
+                    // Don't allow flooding above the global water level
+                    if (p2.water > Fixed(waterLevel - p2.height))
+                        p2.water = Fixed(waterLevel - p2.height);
+                });
+            }
 
-                // Don't allow flooding above the global water level
+            if (p.waterSource
+                && p.height < waterLevel
+                && p.water < Fixed(waterLevel - p.height)) {
+                p.water += Fixed(5) * tickLengthS;
                 if (p.water > Fixed(waterLevel - p.height))
                     p.water = Fixed(waterLevel - p.height);
             }

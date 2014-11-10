@@ -68,13 +68,22 @@ void RocketSystem::receive(const FlyingObjectLanded &event) {
     if (auto rocket = event.entity.component<Rocket>()) {
         Map::Pos p(flyingObject->toPosition);
         assert(map.isPoint(p));
+        GridPoint &gp(map.point(p));
 
-        map.crater(p, 2);
+        // Water protects the terrain 
+        if (gp.water == Fixed(0)) {
+            map.crater(p, 2);
 
-        map.forNeighbors(p, [&] (GridPoint &gp) {
-            if (gp.water > Fixed(0))
-                gp.water = Fixed(1) / Fixed(9);
-            map.crater(gp.pos, 1);
-        });
+            map.forNeighbors(p, [&] (GridPoint &gp2) {
+                if (gp2.water > Fixed(0))
+                    gp2.water /= Fixed(5);
+                map.crater(gp2.pos, 1);
+            });
+        } else {
+            gp.water /= Fixed(7);
+            map.forNeighbors(p, [&] (GridPoint &gp2) {
+                gp2.water /= Fixed(5);
+            });
+        }
     }
 }

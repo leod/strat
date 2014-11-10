@@ -135,10 +135,10 @@ void TerrainPatch::update(bool initial) {
             glm::vec3 n2(glm::normalize(glm::cross(vb2 - va2, vc2 - va2)));
 
             size_t k = (x - position.x) * (size.y * 6) + (y - position.y) * 6;
-            assert(k < sizeof(Vertex) * size.x * size.y * 6);
+            /*assert(k < sizeof(Vertex) * size.x * size.y * 6);
 
             k = j;
-            assert(k + 5 < size.x * size.y * 6);
+            assert(k + 5 < size.x * size.y * 6);*/
 
             Vertex k0(va1, color(va1.z), n1),
                    k1(vb1, color(vb1.z), n1),
@@ -225,21 +225,24 @@ void TerrainPatch::drawWater() {
             glm::vec3 a(POINT(x,y)), b(POINT(x+1,y)),
                       c(POINT(x,y+1)), d(POINT(x+1,y+1));
             float dz = 0.01;
-            a.z += dz + map.point(x,y).water;
-            b.z += dz + map.point(x+1,y).water;
-            c.z += dz + map.point(x,y+1).water;
-            d.z += dz + map.point(x+1,y+1).water;
+#define WHEIGHT(x,y) dz + (int)map.point(x,y).water + sin((map.point(x,y).water - (float)(int)map.point(x,y).water)*M_PI/2.0f)
+            a.z += WHEIGHT(x,y);
+            b.z += WHEIGHT(x+1,y);
+            c.z += WHEIGHT(x,y+1);
+            d.z += WHEIGHT(x+1,y+1);
 
             float ca = map.point(x,y).water > 1 ? 1 : map.point(x,y).water.toFloat();
             float cb = map.point(x+1,y).water > 1 ? 1 : map.point(x+1,y).water.toFloat();
             float cc = map.point(x,y+1).water > 1 ? 1 : map.point(x,y+1).water.toFloat();
             float cd = map.point(x+1,y+1).water > 1 ? 1 : map.point(x+1,y+1).water.toFloat();
 
-#define ALPHA(x) (0.65f + (x)/3.0f)
+#define ALPHA(x) (0.7f + (x)*0.3f)
+//#define ALPHA(x) 1
+
 
             float minw = 0.1;
 
-            if (map.point(x+1,y+1).water > minw || map.point(x+1,y).water > minw ||
+            if (map.point(x+1,y+1).water > minw && map.point(x+1,y).water > minw && 
                 map.point(x,y).water > minw) {
                 glm::vec3 n1(glm::normalize(glm::cross(a - d, b - d)));
                 glNormal3f(n1.x, n1.y, n1.z);
@@ -250,7 +253,7 @@ void TerrainPatch::drawWater() {
                 glVertex3f(d.x, d.y, d.z);
             }
             
-            if (map.point(x,y).water > minw || map.point(x,y+1).water > minw ||
+            if (map.point(x,y).water > minw && map.point(x,y+1).water > minw && 
                 map.point(x+1,y+1).water > minw) {
                 glm::vec3 n2(glm::normalize(glm::cross(c - d, a - d)));
                 glNormal3f(n2.x, n2.y, n2.z);
