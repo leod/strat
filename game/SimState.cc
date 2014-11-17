@@ -89,7 +89,7 @@ entityx::Entity SimState::findClosestBuilding(BuildingType type,
 
             if (point.entity.valid()
                 && point.entity.has_component<Building>()
-                && point.entity.component<Building>()->isFinished()
+                && point.entity.component<Building>()->isUsable()
                 && point.entity.component<Building>()->getType() == type
                 && point.entity.component<GameObject>()->getOwner() == owner) {
                 size_t distance = sqDistance(p, glm::uvec2(x, y));
@@ -126,7 +126,7 @@ bool SimState::isOrderValid(const Order &order) const {
             Building::Handle fromBuilding = fromEntity.component<Building>();
 
             if (!fromBuilding
-                || !fromBuilding->isFinished()
+                || !fromBuilding->isUsable()
                 || fromBuilding->getType() != BUILDING_MAIN)
                 return false;
 
@@ -150,7 +150,7 @@ bool SimState::isOrderValid(const Order &order) const {
             
             return fromBuilding && toBuilding
                    && fromBuilding->getType() == BUILDING_MAIN
-                   && fromBuilding->isFinished()
+                   && fromBuilding->isUsable()
                    && !toBuilding->isFinished();
         }
 
@@ -185,7 +185,7 @@ bool SimState::isOrderValid(const Order &order) const {
             Building::Handle building(entity.component<Building>());
             return building
                    && building->getType() == BUILDING_TOWER
-                   && building->isFinished();
+                   && building->isUsable();
         }
 
         default:
@@ -297,6 +297,7 @@ entityx::Entity SimState::addBuilding(PlayerId owner, BuildingType type,
     entity.assign<Building>(type,
         glm::uvec3(position.x, position.y,
                    map.point(position.x, position.y).height),
+        map.point(position.x, position.y),
         finished);
 
     switch (type) {

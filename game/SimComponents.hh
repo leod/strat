@@ -39,8 +39,9 @@ struct FlyingBlock : entityx::Component<FlyingBlock> {
 struct Building : entityx::Component<Building> {
     friend struct MainBuildingSystem;
 
-    Building(BuildingType type, const glm::uvec3 &position, bool finished)
-        : type(type), position(position), finished(finished) {
+    Building(BuildingType type, const glm::uvec3 &position,
+             const GridPoint &gridPoint, bool finished)
+        : type(type), position(position), gridPoint(gridPoint), finished(finished) {
         assert(type >= 0 && type < BUILDING_MAX);
 
         if (finished)
@@ -114,14 +115,19 @@ struct Building : entityx::Component<Building> {
 
     bool isFinished() const { return finished; }
 
+    bool isUsable() const {
+        return isFinished()
+               && gridPoint.water == Fixed(0);
+    }
+
 private:
     const BuildingType type;
-
     glm::uvec3 position;
+    const GridPoint &gridPoint;
+    bool finished; // finished building
 
     // Resources the building needs in order to be built
     std::vector<BuildingTypeInfo::Block> blocks;
-    bool finished; // finished building
 
     std::vector<FlyingBlock::Handle> incomingBlocks;
 };

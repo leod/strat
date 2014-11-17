@@ -8,19 +8,19 @@ void MinerBuildingSystem::tick(SimState &state) {
     Building::Handle building;
     MinerBuilding::Handle miner;
     for (auto entity : state.entities.entities_with_components(gameObject, building, miner)) {
-        if (!building->isFinished())
+        if (!building->isUsable())
             continue;
 
-        if (miner->amountStored >= Fixed(2)) {
+        if (miner->amountStored >= Fixed(10)) {
             // Launch off resources gathered to store
 
             entityx::Entity target =
                     state.findClosestBuilding(BUILDING_STORE, gameObject->getOwner(),
                                               glm::uvec2(building->getPosition()),
-                                              100);
+                                              40);
             if (target) {
                 state.addFlyingResource(entity, target, RESOURCE_IRON,
-                                        miner->amountStored.toInt()); 
+                                        1 /*miner->amountStored.toInt()*/); 
 
                 miner->amountStored = 0;
             }
@@ -64,7 +64,8 @@ void FlyingResourceSystem::receive(const FlyingObjectLanded &event) {
         auto position = glm::uvec2(flyingObject->toPosition.x.toInt(),
                                    flyingObject->toPosition.y.toInt());
 
-        if (simState.getMap().isPoint(position) && simState.getMap().point(position).entity) {
+        if (simState.getMap().isPoint(position)
+            && simState.getMap().point(position).entity) {
             auto entity = simState.getMap().point(position).entity;
             auto building = entity.component<Building>();
 
@@ -138,10 +139,11 @@ void RocketSystem::receive(const FlyingObjectLanded &event) {
 }
 
 void MainBuildingSystem::tick(SimState &state) {
+    GameObject::Handle gameObject;
     Building::Handle building;
     MainBuilding::Handle mainBuilding;
-    for (auto entity : state.entities.entities_with_components(building, mainBuilding)) {
-        if (!building->isFinished()) continue; 
+    for (auto entity : state.entities.entities_with_components(gameObject, building, mainBuilding)) {
+        if (!building->isUsable()) continue; 
 
         if (!mainBuilding->buildQueue.empty()) {
             entityx::Entity buildEntity = mainBuilding->buildQueue.front();
@@ -158,15 +160,21 @@ void MainBuildingSystem::tick(SimState &state) {
                 continue;
             }
 
+            auto block = buildBuilding->nextNeededBlock();
+            auto player = state.getPlayer(gameObject->getOwner());
+
+            /*if (!player.haveResources(block.resource))
+                continue;*/
+
             // Send off resource block to building being built
             Fixed timeSinceLastLaunch = state.getTimeS() - mainBuilding->timeLastLaunch;
             if (timeSinceLastLaunch >= mainBuilding->getBuildSpeed()) {
                 mainBuilding->timeLastLaunch = state.getTimeS(); 
 
-                auto flying = state.addFlyingBlock(entity, buildEntity,
-                                                   buildBuilding->nextNeededBlock());
-
+                auto flying = state.addFlyingBlock(entity, buildEntity, block);
                 buildBuilding->incomingBlocks.push_back(flying.component<FlyingBlock>());
+
+                //player.takeResources(block.resource);
             }
         }
     }

@@ -14,7 +14,7 @@ using entityx::Entity;
 struct PlayerState {
     PlayerState(const PlayerInfo &info);
 
-    void giveResources(ResourceType type, size_t amount) {
+    void giveResources(ResourceType type, size_t amount = 1) {
         resources.at(type) += amount;
     }
 
@@ -31,12 +31,22 @@ struct PlayerState {
         return false;
     }
 
+    bool haveResources(ResourceType type, size_t amount = 1) {
+        return resources[type] >= amount;
+    }
+
     void takeResources(const Resources &target) {
         assert(haveResources(target));
 
         for (size_t i = 0; i < resources.size(); i++) {
             resources[i] -= target[i];
         }
+    }
+
+    void takeResources(ResourceType type, size_t amount = 1) {
+        assert(haveResources(type, amount));
+
+        resources[type] -= amount;
     }
 
 private:
