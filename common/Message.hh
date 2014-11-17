@@ -24,7 +24,7 @@ struct Message {
         // Messages sent by server
         SERVER_CONNECT,
         SERVER_TICK,
-        SERVER_START
+        SERVER_START,
     };
 
     Type type;

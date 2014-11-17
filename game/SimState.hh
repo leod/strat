@@ -18,14 +18,31 @@ struct PlayerState {
         resources.at(type) += amount;
     }
 
-    const std::vector<size_t> &getResources() const {
+    const Resources &getResources() const {
         return resources;
+    }
+
+    bool haveResources(const Resources &target) const {
+        for (size_t i = 0; i < resources.size(); i++) {
+            if (resources[i] >= target[i])
+                return true;
+        }
+
+        return false;
+    }
+
+    void takeResources(const Resources &target) {
+        assert(haveResources(target));
+
+        for (size_t i = 0; i < resources.size(); i++) {
+            resources[i] -= target[i];
+        }
     }
 
 private:
     const PlayerInfo &info;
 
-    std::vector<size_t> resources;
+    Resources resources;
 };
 
 // Contains all the relevant information about the game state,
@@ -61,11 +78,17 @@ struct SimState : entityx::EntityX {
     // Tick length in seconds
     Fixed getTickLengthS() const;
 
-    void addResourceTransfer(Entity fromEntity, Entity toEntity,
-                             ResourceType resource,
-                             size_t amount); 
+    // Time elapsed in simulation in seconds
+    Fixed getTimeS() const { return time; }
 
-    void addRocket(Entity fromEntity, Map::Pos toPos);
+    entityx::Entity addBuilding(PlayerId owner, BuildingType type,
+                                const glm::uvec2 &position, bool finished);
+    entityx::Entity addFlyingResource(Entity fromEntity, Entity toEntity,
+                                      ResourceType resource,
+                                      size_t amount); 
+    entityx::Entity addFlyingBlock(Entity fromEntity, Entity toEntity,
+                                   const BuildingTypeInfo::Block &block);
+    entityx::Entity addRocket(Entity fromEntity, Map::Pos toPos);
 
     void raiseWaterLevel();
     size_t getWaterLevel() const { return waterLevel; }

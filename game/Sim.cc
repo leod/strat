@@ -5,9 +5,13 @@
 
 Sim::Sim(const GameSettings &settings)
     : state(settings),
+      flyingBlockSystem(state.entities),
+      flyingResourceSystem(state),
       rocketSystem(state.getMap()) {
     state.raiseWaterLevel();
-
+    
+    flyingBlockSystem.configure(state.events);
+    flyingResourceSystem.configure(state.events);
     rocketSystem.configure(state.events);
 }
 
@@ -38,6 +42,7 @@ void Sim::runTick(const std::vector<Order> &orders) {
         minerBuildingSystem.tick(state);
         flyingObjectSystem.tick(state);
         //rocketSystem.tick(state);
+        mainBuildingSystem.tick(state);
     }
 }
 

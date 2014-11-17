@@ -89,8 +89,19 @@ void printOglError(const char *file, int line) {
     }
 }
 
-void RenderBuildingSystem::configure(entityx::EventManager &events) {
-    events.subscribe<BuildingCreated>(*this);
+void renderResource(ResourceType type, const glm::vec3 &pos) {
+    vec3 c(0.7, 0.7, 0.7);
+
+    glPushMatrix();
+    glTranslatef(pos.x, pos.y, pos.z);
+    //glTranslatef(-0.5f, -0.5f, 0.0f);
+
+    glBegin(GL_QUADS);
+    glColor4f(c.x, c.y, c.z, 1.0f);
+    drawCube();
+    glEnd();
+
+    glPopMatrix();
 }
 
 void RenderBuildingSystem::render(entityx::EntityManager &entities) {
@@ -103,24 +114,33 @@ void RenderBuildingSystem::render(entityx::EntityManager &entities) {
         vec3 position(building->getPosition()),
              size(building->getTypeInfo().size);
 
-        glPushMatrix();
-        glTranslatef(position.x, position.y, position.z);
-        glScalef(size.x, size.y, size.z);
 
         assert(gameObject->getOwner() > 0 && gameObject->getOwner()-1 < 4);
         vec3 color(playerColors[gameObject->getOwner()-1]); //TODO
+
+        renderBuilding(building->getType(),
+                       building->getPosition(),
+                       building->getBlocks());                       
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+        // Colored border around building
+        glPushMatrix();
+        glTranslatef(position.x, position.y, position.z);
+        glScalef(size.x, size.y, size.z);
         glBegin(GL_QUADS);
         glColor4f(color.x, color.y, color.z, 1.0f);
         drawCube();
         glEnd();
-
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glPopMatrix();
 
+        // Selection circle around building
         if (auto mode = boost::get<Input::BuildingSelectedMode>(&input.getMode())) {
             if (mode->isSelected(entity)) {
                 glPushMatrix();
                 vec3 center = position + size / 2.0f;
-                float radius = sqrt((size.x * size.x) + (size.y * size.y));
+                float radius = sqrt((size.x * size.x) + (size.y * size.y)) * 0.6f;
 
                 glTranslatef(center.x, center.y, center.z);
 
@@ -141,7 +161,16 @@ void RenderBuildingSystem::render(entityx::EntityManager &entities) {
     glEnable(GL_CULL_FACE);
 }
 
-void RenderBuildingSystem::receive(const BuildingCreated &event) {
+void RenderBuildingSystem::renderBuilding(BuildingType type, const glm::uvec3 &pos,
+                                          const std::vector<BuildingTypeInfo::Block> &blocks) {
+    glPushMatrix();
+    glTranslatef(pos.x, pos.y, pos.z);
+    
+    for (const auto &block : blocks) {
+        renderResource(block.resource, glm::vec3(block.pos));
+    }
+
+    glPopMatrix();
 }
 
 void RenderFlyingResourceSystem::render(entityx::EntityManager &entities) {
@@ -164,6 +193,32 @@ void RenderFlyingResourceSystem::render(entityx::EntityManager &entities) {
         glPushMatrix();
         glTranslatef(p.x, p.y, p.z);
         glTranslatef(-0.5f, -0.5f, 0.0f);
+
+        glBegin(GL_QUADS);
+        glColor4f(c.x, c.y, c.z, 1.0f);
+        drawCube();
+        glEnd();
+
+        glPopMatrix();
+    }
+
+    // tmp
+    FlyingBlock::Handle flyingBlock;
+    for (auto entity :
+         entities.entities_with_components(flyingObject, flyingBlock)) {
+        float ta = flyingObject->getLastProgress().toFloat();
+        float tb = flyingObject->getProgress().toFloat();
+        float t = lerp<float>(ta, tb, interp.getT());
+
+        vec3 p(bezier(vec3(flyingObject->fromPosition),
+                           vec3(flyingObject->toPosition),
+                           flyingObject->distance.toFloat() * 0.5f,
+                           t));
+        vec3 c(0.7, 0.7, 0.7);
+
+        glPushMatrix();
+        glTranslatef(p.x, p.y, p.z);
+        //glTranslatef(-0.5f, -0.5f, 0.0f);
 
         glBegin(GL_QUADS);
         glColor4f(c.x, c.y, c.z, 1.0f);
@@ -196,6 +251,7 @@ void RenderRocketSystem::render(entityx::EntityManager &entities) {
                             t + 0.001f));
         vec3 c(1.0f, 0.0f, 0.0f);
 
+        // Rotate rockets to tangent
         vec3 d(normalize(p2 - p));
         vec3 x1(d);
         vec3 x2(normalize(cross(x1, vec3(0, 0, 1))));

@@ -168,7 +168,13 @@ int main(int argc, char *argv[]) {
                          << "x=" << static_cast<int>(input.getCursor().x) << ", "
                          << "y=" << static_cast<int>(input.getCursor().y) << ", "
                          << "z=" << static_cast<int>(map.point(input.getCursor()).height)
-                         << ")";
+                         << "): ";
+
+        auto player = simState.getPlayer(client.getPlayerId());
+
+        for (size_t i = 0; i < RESOURCE_MAX; i++)
+            ss << player.getResources()[i] << " ";
+
         glfwSetWindowTitle(window, ss.str().c_str());
     } 
 

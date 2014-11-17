@@ -5,7 +5,9 @@
 #include <cstdlib>
 
 PlayerState::PlayerState(const PlayerInfo &info)
-    : info(info), resources(RESOURCE_MAX, 0) {
+    : info(info) {
+    for (auto &r : resources)
+        r = 30;
 }
 
 SimState::SimState(const GameSettings &settings)
@@ -23,17 +25,9 @@ SimState::SimState(const GameSettings &settings)
         do {
             x = rand() % settings.mapW;
             y = rand() % settings.mapH;
-        } while (!canPlaceBuilding(BUILDING_BASE, glm::uvec2(x, y)));
+        } while (!canPlaceBuilding(BUILDING_MAIN, glm::uvec2(x, y)));
 
-        Order order(Order::BUILD);
-        order.player = player.id;
-        order.build.type = BUILDING_BASE;
-        order.build.x = x;
-        order.build.y = y;
-
-        assert(isOrderValid(order));
-
-        runOrder(order);
+        addBuilding(player.id, BUILDING_MAIN, glm::uvec2(x, y), true);
     }
 
     // Generate some trees
@@ -95,6 +89,7 @@ entityx::Entity SimState::findClosestBuilding(BuildingType type,
 
             if (point.entity.valid()
                 && point.entity.has_component<Building>()
+                && point.entity.component<Building>()->isFinished()
                 && point.entity.component<Building>()->getType() == type
                 && point.entity.component<GameObject>()->getOwner() == owner) {
                 size_t distance = sqDistance(p, glm::uvec2(x, y));
@@ -123,43 +118,78 @@ void SimState::placeTree(const glm::uvec2 &p) {
 
 bool SimState::isOrderValid(const Order &order) const {
     switch (order.type) {
-    case Order::BUILD:
-        return canPlaceBuilding(order.build.type,
-                                glm::uvec2(order.build.x, order.build.y));
-    case Order::RAISE_MAP: {
-        if(!map.isPoint(order.raiseMap.x, order.raiseMap.y)
-           || !map.isPoint(order.raiseMap.x + order.raiseMap.w,
-                           order.raiseMap.y + order.raiseMap.h))
+        case Order::BUILD: {
+            entityx::Entity fromEntity = getGameObject(order.build.objectId);
+            if (!fromEntity)
+                return false;
+
+            Building::Handle fromBuilding = fromEntity.component<Building>();
+
+            if (!fromBuilding
+                || !fromBuilding->isFinished()
+                || fromBuilding->getType() != BUILDING_MAIN)
+                return false;
+
+            const auto &typeInfo(buildingTypeInfo[order.build.type]);
+
+            if (!getPlayer(order.player).haveResources(typeInfo.costs))
+                return false;
+
+            return canPlaceBuilding(order.build.type,
+                                    glm::uvec2(order.build.x, order.build.y));
+        }
+
+        case Order::CONSTRUCT: {
+            entityx::Entity fromEntity = getGameObject(order.construct.from),
+                            toEntity = getGameObject(order.construct.to);
+            if (!fromEntity || !toEntity)
+                return false;
+
+            Building::Handle fromBuilding = fromEntity.component<Building>(),
+                             toBuilding = toEntity.component<Building>();
+            
+            return fromBuilding && toBuilding
+                   && fromBuilding->getType() == BUILDING_MAIN
+                   && fromBuilding->isFinished()
+                   && !toBuilding->isFinished();
+        }
+
+        case Order::RAISE_MAP: {
+            if(!map.isPoint(order.raiseMap.x, order.raiseMap.y)
+               || !map.isPoint(order.raiseMap.x + order.raiseMap.w,
+                               order.raiseMap.y + order.raiseMap.h))
+                return false;
+
+            bool valid = true;
+            map.forRectangle(Map::Pos(order.raiseMap.x, order.raiseMap.y),
+                             Map::Pos(order.raiseMap.w, order.raiseMap.h),
+                             [&] (const GridPoint &p) {
+                                 valid = valid && p.usable();
+                             });
+            return valid;
+        }
+        
+        case Order::ATTACK: {
+            if (!map.isPoint(order.attack.x, order.attack.y))
+                return false;
+
+            entityx::Entity entity = getGameObject(order.attack.objectId);
+            if (!entity)
+                return false;
+
+            GameObject::Handle gameObject(entity.component<GameObject>());
+            assert(gameObject);
+            if (gameObject->getOwner() != order.player)
+                return false;
+
+            Building::Handle building(entity.component<Building>());
+            return building
+                   && building->getType() == BUILDING_TOWER
+                   && building->isFinished();
+        }
+
+        default:
             return false;
-
-        bool valid = true;
-        map.forRectangle(Map::Pos(order.raiseMap.x, order.raiseMap.y),
-                         Map::Pos(order.raiseMap.w, order.raiseMap.h),
-                         [&] (const GridPoint &p) {
-                             valid = valid && p.usable();
-                         });
-        return valid;
-    }
-    
-    case Order::ATTACK: {
-        if (!map.isPoint(order.attack.x, order.attack.y))
-            return false;
-
-        entityx::Entity entity = getGameObject(order.attack.objectId);
-        if (!entity)
-            return false;
-
-        GameObject::Handle gameObject(entity.component<GameObject>());
-        assert(gameObject);
-        if (gameObject->getOwner() != order.player)
-            return false;
-
-        Building::Handle building(entity.component<Building>());
-        return building && building->getType() == BUILDING_TOWER;
-    }
-
-    default:
-        return false;
     }
 }
 
@@ -167,68 +197,62 @@ void SimState::runOrder(const Order &order) {
     assert(isOrderValid(order));
 
     switch (order.type) {
-    case Order::BUILD: {
-        std::cout << "Got build order at x=" << order.build.x
-                  << ", y=" << order.build.y 
-                  << ", by " << order.player << std::endl;
+        case Order::BUILD: {
+            entityx::Entity fromEntity = getGameObject(order.build.objectId);
+            entityx::Entity entity = addBuilding(order.player,
+                                                 order.build.type,
+                                                 glm::uvec2(order.build.x, order.build.y),
+                                                 false);
+            fromEntity.component<MainBuilding>()->queueBuild(entity);
 
-        entityx::Entity entity = entities.create();
-        entity.assign<GameObject>(order.player, ++entityCounter);
-        entity.assign<Building>(order.build.type,
-            glm::uvec3(order.build.x, order.build.y,
-                       map.point(order.build.x, order.build.y).height));
+            const auto &typeInfo(buildingTypeInfo[order.build.type]);
+            getPlayer(order.player).takeResources(typeInfo.costs);
 
-        if (order.build.type == BUILDING_MINER)
-            entity.assign<MinerBuilding>(RESOURCE_IRON);
-
-        events.emit<BuildingCreated>(entity);
-
-        const BuildingTypeInfo &type(buildingTypeInfo[order.build.type]);
-        for (size_t x = order.build.x; x < order.build.x + type.size.x; x++) {
-            for (size_t y = order.build.y; y < order.build.y + type.size.y; y++) {
-                map.point(x, y).entity = entity;
-            }
+            return;
         }
 
-        return;
-    }
+        case Order::CONSTRUCT: {
+            auto mainBuilding = getGameObject(order.construct.from)            
+                                .component<MainBuilding>();
+            assert(mainBuilding);
 
-    case Order::RAISE_MAP: {
-        std::cout << "Got raise map order at x=" << order.raiseMap.x
-                  << ", y=" << order.raiseMap.y
-                  << ", w=" << order.raiseMap.w
-                  << ", h=" << order.raiseMap.h << std::endl;
-        map.raise(Map::Pos(order.raiseMap.x, order.raiseMap.y),
-                  Map::Pos(order.raiseMap.w, order.raiseMap.h));
-        return;
-    }
+            auto buildEntity = getGameObject(order.construct.to);
+            if (order.construct.queue)
+                mainBuilding->queueBuild(buildEntity);
+            else
+                mainBuilding->build(buildEntity);
 
-    case Order::ATTACK: {
-        std::cout << "Got attack order at x=" << order.attack.x
-                  << ", y=" << order.attack.y
-                  << ", from=" << order.attack.objectId << std::endl;
+            return;
+        }
 
-        entityx::Entity entity = getGameObject(order.attack.objectId);
+        case Order::RAISE_MAP: {
+            map.raise(Map::Pos(order.raiseMap.x, order.raiseMap.y),
+                      Map::Pos(order.raiseMap.w, order.raiseMap.h));
+            return;
+        }
 
-        // TODO: Random numbers again..
-        int radius = 10;
-        int dx = rand() % radius - radius / 2;
-        int dy = rand() % radius - radius / 2;
+        case Order::ATTACK: {
+            entityx::Entity entity = getGameObject(order.attack.objectId);
 
-        int x = order.attack.x + dx;
-        int y = order.attack.y + dy;
+            // TODO: Random numbers again..
+            int radius = 10;
+            int dx = rand() % radius - radius / 2;
+            int dy = rand() % radius - radius / 2;
 
-        if (x < 0) x = 0;
-        if (x >= map.getSizeX()) x = map.getSizeX() - 1;
-        if (y < 0) y = 0;
-        if (y >= map.getSizeY()) y = map.getSizeY() - 1;
+            int x = order.attack.x + dx;
+            int y = order.attack.y + dy;
 
-        addRocket(entity, Map::Pos(x, y));
-        return;
-    }
+            if (x < 0) x = 0;
+            if (x >= (int)map.getSizeX()) x = map.getSizeX() - 1;
+            if (y < 0) y = 0;
+            if (y >= (int)map.getSizeY()) y = map.getSizeY() - 1;
 
-    default:
-        return;
+            addRocket(entity, Map::Pos(x, y));
+            return;
+        }
+
+        default:
+            return;
     }
 }
 
@@ -266,9 +290,40 @@ Fixed SimState::getTickLengthS() const {
     return Fixed(settings.tickLengthMs) / Fixed(1000);
 }
 
-void SimState::addResourceTransfer(Entity fromEntity, Entity toEntity,
-                                   ResourceType resource,
-                                   size_t amount) {
+entityx::Entity SimState::addBuilding(PlayerId owner, BuildingType type,
+                                      const glm::uvec2 &position, bool finished) {
+    entityx::Entity entity = entities.create();
+    entity.assign<GameObject>(owner, ++entityCounter);
+    entity.assign<Building>(type,
+        glm::uvec3(position.x, position.y,
+                   map.point(position.x, position.y).height),
+        finished);
+
+    switch (type) {
+    case BUILDING_MINER:
+        entity.assign<MinerBuilding>(RESOURCE_IRON);
+        break;
+    case BUILDING_MAIN:
+        entity.assign<MainBuilding>();
+        break;
+    default:
+        break;
+    }
+
+    events.emit<BuildingCreated>(entity);
+
+    map.forRectangle(position,
+                     glm::uvec2(buildingTypeInfo[type].size),
+                     [&] (GridPoint &p) {
+        p.entity = entity;
+    });
+
+    return entity;
+}
+
+entityx::Entity SimState::addFlyingResource(Entity fromEntity, Entity toEntity,
+                                            ResourceType resource,
+                                            size_t amount) {
     Building::Handle fromBuilding(fromEntity.component<Building>()),
                      toBuilding(toEntity.component<Building>());
     GameObject::Handle fromObject(fromEntity.component<GameObject>());
@@ -294,9 +349,41 @@ void SimState::addResourceTransfer(Entity fromEntity, Entity toEntity,
     entity.assign<GameObject>(fromObject->getOwner(), ++entityCounter);
     entity.assign<FlyingObject>(fromPosition, toPosition);
     entity.assign<FlyingResource>(resource, amount);
+
+    return entity;
 }
 
-void SimState::addRocket(Entity fromEntity, Map::Pos toPos) {
+entityx::Entity SimState::addFlyingBlock(Entity fromEntity, Entity toEntity,
+                                         const BuildingTypeInfo::Block &block) {
+    assert(fromEntity != toEntity);
+
+    Building::Handle fromBuilding(fromEntity.component<Building>()),
+                     toBuilding(toEntity.component<Building>());
+    GameObject::Handle fromObject(fromEntity.component<GameObject>());
+    assert(fromBuilding && toBuilding && fromObject);
+
+    // For now: start and end in the middle of the top of the buildings
+    // These positions are used to calculate the distance of the transfer,
+    // and for rendering.
+    fvec3 fromPosition(fromBuilding->getPosition()),
+          toPosition(toBuilding->getPosition());
+
+    BuildingTypeInfo &fromTi(fromBuilding->getTypeInfo());
+
+    fromPosition += fvec3(Fixed(fromTi.size.x) / Fixed(2),
+                          Fixed(fromTi.size.y) / Fixed(2),
+                          Fixed(fromTi.size.z));
+    toPosition += block.pos;
+
+    entityx::Entity entity = entities.create();
+    entity.assign<GameObject>(fromObject->getOwner(), ++entityCounter);
+    entity.assign<FlyingObject>(fromPosition, toPosition);
+    entity.assign<FlyingBlock>(toEntity, block);
+
+    return entity;
+}
+
+entityx::Entity SimState::addRocket(Entity fromEntity, Map::Pos toPos) {
     Building::Handle fromBuilding(fromEntity.component<Building>());
     GameObject::Handle fromObject(fromEntity.component<GameObject>());
     assert(fromBuilding && fromObject);
@@ -313,6 +400,8 @@ void SimState::addRocket(Entity fromEntity, Map::Pos toPos) {
     entity.assign<GameObject>(fromObject->getOwner(), ++entityCounter);
     entity.assign<FlyingObject>(fromPosition, toPosition);
     entity.assign<Rocket>();
+
+    return entity;
 }
 
 void SimState::raiseWaterLevel() {
@@ -320,13 +409,13 @@ void SimState::raiseWaterLevel() {
 
     waterLevel++;
     map.raiseWaterLevel(waterLevel);
-
 }
 
 void SimState::tick() {
     time += getTickLengthS();
+
     if ((size_t)time.toInt() / 10 >= waterLevel && waterLevel < map.getMaxHeight()) {
-        raiseWaterLevel();
+        //raiseWaterLevel();
     }
 }
 

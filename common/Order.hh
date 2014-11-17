@@ -9,11 +9,13 @@ struct BitStreamWriter;
 struct Order {
     enum Type {
         UNDEFINED,
+
         BUILD,
+        CONSTRUCT,
         ATTACK,
         STOP,
         REMOVE,
-        RAISE_MAP
+        RAISE_MAP,
     } type;
 
     Order(Type type = UNDEFINED)
@@ -24,9 +26,15 @@ struct Order {
 
     union {
         struct {
+            ObjectId objectId;
             BuildingType type;
             uint16_t x, y;
         } build;
+
+        struct {
+            uint16_t queue;
+            ObjectId from, to;
+        } construct;
 
         struct {
             ObjectId objectId;

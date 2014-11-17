@@ -13,9 +13,15 @@ void read(BitStreamReader &reader, Order &order) {
         assert(false);
         return;
     case Order::BUILD:
+        read(reader, order.build.objectId);
         read(reader, order.build.type);
         read(reader, order.build.x);
         read(reader, order.build.y);
+        return;
+    case Order::CONSTRUCT:
+        read(reader, order.construct.queue);
+        read(reader, order.construct.from);
+        read(reader, order.construct.to);
         return;
     case Order::ATTACK:
         read(reader, order.attack.objectId);
@@ -46,9 +52,15 @@ void write(BitStreamWriter &writer, const Order &order) {
         assert(false);
         return;
     case Order::BUILD:
+        write(writer, order.build.objectId);
         write(writer, order.build.type);
         write(writer, order.build.x);
         write(writer, order.build.y);
+        return;
+    case Order::CONSTRUCT:
+        write(writer, order.construct.queue);
+        write(writer, order.construct.from);
+        write(writer, order.construct.to);
         return;
     case Order::ATTACK:
         write(writer, order.attack.objectId);

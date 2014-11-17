@@ -16,18 +16,14 @@
 struct Map;
 struct InterpState;
 
-struct RenderBuilding : public entityx::Component<RenderBuilding> {
-};
-
-struct RenderBuildingSystem :
-    public entityx::Receiver<RenderBuildingSystem> {
+struct RenderBuildingSystem {
     RenderBuildingSystem(const Map &map, const Input &input)
         : map(map), input(input) {}
 
-    void configure(entityx::EventManager &);
-    void receive(const BuildingCreated &);
-
     void render(entityx::EntityManager &entities);
+
+    void renderBuilding(BuildingType, const glm::uvec3 &,
+                        const std::vector<BuildingTypeInfo::Block> &);
 
 private:
     const Map &map;

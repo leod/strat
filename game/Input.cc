@@ -66,7 +66,7 @@ Input::BuildingSelectedMode Input::BuildingSelectedMode::add(const std::vector<e
         }
     }
 
-    return Input::BuildingSelectedMode(newEntities, time);
+    return BuildingSelectedMode(newEntities, time);
 }
 
 bool Input::BuildingSelectedMode::isSelected(entityx::Entity e) const {
@@ -92,7 +92,24 @@ Input::BuildingSelectedMode Input::BuildingSelectedMode::remove(entityx::Entity 
         std::find(newEntities.begin(), newEntities.end(), e);
     assert(position2 == newEntities.end());
 
-    return Input::BuildingSelectedMode(newEntities, time);
+    return BuildingSelectedMode(newEntities, time);
+}
+
+bool Input::BuildingSelectedMode::allSameType(BuildingType &type) const {
+    bool first = true;
+    for (auto entity : entities) {
+        Building::Handle building = entity.component<Building>();
+
+        if (first) { 
+            type = building->getType();
+            first = false;
+        } else {
+            if (type != building->getType())
+                return false;
+        }
+    }
+
+    return true;
 }
 
 Input::Input(const Config &config, GLFWwindow *window, Client &client,
@@ -100,10 +117,14 @@ Input::Input(const Config &config, GLFWwindow *window, Client &client,
     : config(config), window(window),
       client(client), sim(client.getSim()),
       terrain(terrain), map(sim.getState().getMap()),
-      mode(Input::DefaultMode()),
+      mode(DefaultMode()),
       scrollSpeed(5.0f) {
-    view.target.x = map.getSizeX() / 2;
-    view.target.y = map.getSizeY() / 2;
+    /*view.target.x = map.getSizeX() / 2;
+    view.target.y = map.getSizeY() / 2;*/
+    auto mainEnt = findMainBuilding();
+    view.target = mainEnt.component<Building>()->getPosition();
+    vec3 origin_camera(0, -10.0f, view.distance);
+    view.position = view.target + rotateZ(origin_camera, view.angle);
 
     assert(!g_input);
     g_input = this;
@@ -237,8 +258,9 @@ void Input::tryScroll(const vec2 &delta) {
     view.target.z = map.point(view.target.x, view.target.y).height;
 }
 
-void Input::build(BuildingType type) {
+void Input::build(BuildingType type, ObjectId from) {
     Order order(Order::BUILD);
+    order.build.objectId = from;
     order.build.x = static_cast<uint16_t>(cursor.x);
     order.build.y = static_cast<uint16_t>(cursor.y);
     order.build.type = type;
@@ -252,7 +274,7 @@ entityx::Entity Input::pickEntity() {
     GameObject::Handle gameObject;
     Building::Handle building;
     for (auto entity : sim.getEntities().entities_with_components(gameObject, building)) {
-        AABB aabb(vec3(building->getPosition()),
+        AABB aabb(vec3(building->getPosition()), //- vec3(0.5, 0.5, 0),
                   vec3(building->getPosition() + building->getTypeInfo().size));
         float d;
 
@@ -265,6 +287,20 @@ entityx::Entity Input::pickEntity() {
     return minEntity;
 }
 
+entityx::Entity Input::findMainBuilding() {
+    GameObject::Handle gameObject;
+    Building::Handle building;
+
+    for (auto entity : sim.getEntities().entities_with_components(gameObject, building)) {
+        if (gameObject->getOwner() == client.getPlayerId()
+            && building->getType() == BUILDING_MAIN) {
+            return entity;
+        }
+    }
+
+    assert(false);
+}
+
 void Input::setCallbacks(GLFWwindow *window) {
     glfwSetMouseButtonCallback(window, Input::onMouseButton);
     glfwSetKeyCallback(window, Input::onKey);
@@ -274,35 +310,36 @@ void Input::onMouseButton(GLFWwindow *window,
                           int button, int action, int mods) {
     if (Input *self = g_input) {
         match(self->mode,
-            [&](const Input::DefaultMode &) {
+            [&](const DefaultMode &) {
                 if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_1) {
                     // Click on an entity?
                     if (entityx::Entity entity = self->pickEntity()) {
                         // If it's a building, switch mode
                         if (entity.has_component<Building>()) {
-                            self->mode = Input::BuildingSelectedMode(entity, glfwGetTime());
+                            self->mode = BuildingSelectedMode(entity, glfwGetTime());
                         }
                     } else { // Click on the map
-                        self->mode = Input::MapSelectionMode(self->cursor);
+                        self->mode = MapSelectionMode(self->cursor);
                     }
                 }
             },
 
-            [&](const Input::BuildingSelectedMode &mode) {
+            [&](const BuildingSelectedMode &mode) {
+                entityx::Entity pick = self->pickEntity();
+
                 if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_1) {
                     // Click on an entity?
-                    if (entityx::Entity entity = self->pickEntity()) {
-                        if (entity.has_component<Building>()) {
-                            std::vector<entityx::Entity> selection(1, entity);
+                    if (pick) {
+                        if (pick.has_component<Building>()) {
+                            std::vector<entityx::Entity> selection(1, pick);
 
-                            entityx::Entity lastEntity(mode.entities.back());
+                            entityx::Entity lastPick(mode.entities.back());
 
                             // Double click selection
-                            if (lastEntity
-                                && lastEntity == entity
+                            if (lastPick && lastPick == pick
                                 && glfwGetTime() - mode.lastSelectionTime <= DOUBLE_CLICK_S) {
-                                Building::Handle lastBuilding(lastEntity.component<Building>());
-                                GameObject::Handle lastObject(lastEntity.component<GameObject>());
+                                Building::Handle lastBuilding(lastPick.component<Building>());
+                                GameObject::Handle lastObject(lastPick.component<GameObject>());
 
                                 // Find all game objects of the same type and owner
                                 GameObject::Handle gameObject;
@@ -312,7 +349,7 @@ void Input::onMouseButton(GLFWwindow *window,
                                     if (building->getType() == lastBuilding->getType()
                                         && lastObject->getOwner() == gameObject->getOwner()
                                         && lastObject->getOwner() == self->client.getPlayerId()
-                                        && entity != lastEntity)
+                                        && entity != lastPick)
                                         selection.push_back(entity);
                                 }
                             }
@@ -322,29 +359,43 @@ void Input::onMouseButton(GLFWwindow *window,
                                 self->mode = mode.add(selection, glfwGetTime());
                             } else {
                                 // New selection
-                                self->mode = Input::BuildingSelectedMode(selection, glfwGetTime());
+                                self->mode = BuildingSelectedMode(selection, glfwGetTime());
                             }
                         }
                     } else { // Click on the map
-                        self->mode = Input::DefaultMode();
+                        self->mode = DefaultMode();
                     }
                 }
 
                 if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_2) {
                     for (auto entity : mode.entities) {
-                        if (entity.component<Building>()->getType() != BUILDING_TOWER)
-                            continue;
-
-                        Order order(Order::ATTACK);
-                        order.attack.x = self->cursor.x;
-                        order.attack.y = self->cursor.y;
-                        order.attack.objectId = entity.component<GameObject>()->getId();
-                        self->client.order(order);
+                        auto building = entity.component<Building>();
+                        switch (building->getType()) {
+                            case BUILDING_TOWER: {
+                                Order order(Order::ATTACK);
+                                order.attack.x = self->cursor.x;
+                                order.attack.y = self->cursor.y;
+                                order.attack.objectId = entity.component<GameObject>()->getId();
+                                self->client.order(order);
+                                break;
+                            }
+                            case BUILDING_MAIN: {
+                                if (pick) {
+                                    Order order(Order::CONSTRUCT);
+                                    order.construct.queue = 0;
+                                    order.construct.from = entity.component<GameObject>()->getId();
+                                    order.construct.to = pick.component<GameObject>()->getId();
+                                    self->client.order(order);
+                                }
+                                break;
+                            }
+                            default: break;
+                        }
                     }
                 }
             },
 
-            [&](const Input::MapSelectionMode &mode) {
+            [&](const MapSelectionMode &mode) {
                 if (action == GLFW_RELEASE
                     && button == GLFW_MOUSE_BUTTON_1) {
                     Map::Pos a(self->cursor), b(mode.start);
@@ -356,10 +407,10 @@ void Input::onMouseButton(GLFWwindow *window,
                     order.raiseMap.h = std::max(a.y, b.y) - std::min(a.y, b.y);
                     self->client.order(order);
 
-                    self->mode = Input::DefaultMode();
+                    self->mode = DefaultMode();
                 } else if (action == GLFW_PRESS
                            && button == GLFW_MOUSE_BUTTON_2) {
-                    self->mode = Input::DefaultMode();
+                    self->mode = DefaultMode();
                 }
             });
     }
@@ -371,21 +422,31 @@ void Input::onKey(GLFWwindow *window, int key, int, int action, int mods) {
 
     if (Input *self = g_input) {
         match(self->mode,
-            [&](const Input::DefaultMode &) {
+            [&](const DefaultMode &) {
+            },
+
+            [&](const BuildingSelectedMode &mode) {
+                BuildingType type;
+                if (mode.allSameType(type)) {
+                    if (type == BUILDING_MAIN) {
+                        ObjectId from = mode.entities[0].component<GameObject>()->getId();
+
+                        if (key == GLFW_KEY_1)
+                            self->build(BUILDING_MINER, from);
+                        else if (key == GLFW_KEY_2)
+                            self->build(BUILDING_STORE, from);
+                        else if (key == GLFW_KEY_3)
+                            self->build(BUILDING_TOWER, from);
+                        else if (key == GLFW_KEY_4)
+                            self->build(BUILDING_MAIN, from);
+                    }
+                }
+
                 if (action == GLFW_PRESS) {
-                    if (key == GLFW_KEY_B)
-                        self->build(BUILDING_MINER);
-                    else if (key == GLFW_KEY_N)
-                        self->build(BUILDING_STORE);
-                    else if (key == GLFW_KEY_M)
-                        self->build(BUILDING_TOWER);
                 }
             },
 
-            [&](const Input::BuildingSelectedMode &) {
-            },
-
-            [&](const Input::MapSelectionMode &) {
+            [&](const MapSelectionMode &) {
             });
     }
 }

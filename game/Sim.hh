@@ -47,7 +47,10 @@ private:
 
     MinerBuildingSystem minerBuildingSystem;
     FlyingObjectSystem flyingObjectSystem;
+    FlyingBlockSystem flyingBlockSystem;
+    FlyingResourceSystem flyingResourceSystem;
     RocketSystem rocketSystem;
+    MainBuildingSystem mainBuildingSystem;
 };
 
 #endif

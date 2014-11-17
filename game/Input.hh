@@ -65,6 +65,8 @@ struct Input : entityx::Receiver<Input> {
         bool isSelected(entityx::Entity e) const;
 
         BuildingSelectedMode remove(entityx::Entity e) const;
+
+        bool allSameType(BuildingType &type) const;
     };
 
     //                  release left mouse button
@@ -131,11 +133,14 @@ private:
     void tryScroll(const glm::vec2 &delta);
 
     // Send order for building a building at the cursor position
-    void build(BuildingType);
+    void build(BuildingType, ObjectId);
 
     // Intersect view ray with selectable objects,
     // returns the closest hit or an invalid entity handle if there is none
     entityx::Entity pickEntity();
+
+    // Find main building of our player
+    entityx::Entity findMainBuilding();
  
     // Callbacks for GLFW
     static void setCallbacks(GLFWwindow *);

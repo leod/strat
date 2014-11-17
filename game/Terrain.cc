@@ -225,7 +225,8 @@ void TerrainPatch::drawWater() {
             glm::vec3 a(POINT(x,y)), b(POINT(x+1,y)),
                       c(POINT(x,y+1)), d(POINT(x+1,y+1));
             float dz = 0.01;
-#define WHEIGHT(x,y) dz + (int)map.point(x,y).water + sin((map.point(x,y).water - (float)(int)map.point(x,y).water)*M_PI/2.0f)
+//#define WHEIGHT(x,y) dz + (int)map.point(x,y).water + sin((map.point(x,y).water - (float)(int)map.point(x,y).water)*M_PI/2.0f)
+#define WHEIGHT(x,y) dz + map.point(x,y).water;
             a.z += WHEIGHT(x,y);
             b.z += WHEIGHT(x+1,y);
             c.z += WHEIGHT(x,y+1);
@@ -238,7 +239,6 @@ void TerrainPatch::drawWater() {
 
 #define ALPHA(x) (0.7f + (x)*0.3f)
 //#define ALPHA(x) 1
-
 
             float minw = 0.1;
 

@@ -107,7 +107,7 @@ void Map::tick(entityx::EntityManager &entities, Fixed tickLengthS) {
             if (p.growthProgress >= Fixed(1)) {
                 if (p.growthTarget > 0) {
                     // Grow upward
-                    p.height += 1;
+                    p.height++;
                     p.growthTarget--;
                     p.growthCascadeUp = true;
                 } else if (p.height > 0) {
@@ -118,7 +118,7 @@ void Map::tick(entityx::EntityManager &entities, Fixed tickLengthS) {
                 }
 
                 p.growthProgress -= Fixed(1);
-                p.water = Fixed(0);
+                //p.water = Fixed(0);
 
                 if (p.growthTarget == 0) // Stop growing
                     p.growthProgress = Fixed(0);
@@ -180,7 +180,7 @@ void Map::raiseWaterLevel(size_t waterLevel) {
 }
 
 void Map::waterTick(Fixed tickLengthS, size_t waterLevel) {
-    Fixed flowPerS(Fixed(3) / Fixed(1));
+    Fixed flowPerS(Fixed(2) / Fixed(1));
 
     // Calculate water flow from grid point to grid point
     for (size_t x = 0; x < getSizeX(); x++) {
@@ -200,7 +200,7 @@ void Map::waterTick(Fixed tickLengthS, size_t waterLevel) {
                     value *= flowPerS * tickLengthS;
                     if (value > p.water) value = p.water;
 
-                    p.water -= value * Fixed(2) / Fixed(3);
+                    p.water -= value * Fixed(6) / Fixed(8);
                     p2.water += value;
                     
                     // Don't allow flooding above the global water level
@@ -212,7 +212,7 @@ void Map::waterTick(Fixed tickLengthS, size_t waterLevel) {
             if (p.waterSource
                 && p.height < waterLevel
                 && p.water < Fixed(waterLevel - p.height)) {
-                p.water += Fixed(5) * tickLengthS;
+                p.water += Fixed(4) * tickLengthS;
                 if (p.water > Fixed(waterLevel - p.height))
                     p.water = Fixed(waterLevel - p.height);
             }
